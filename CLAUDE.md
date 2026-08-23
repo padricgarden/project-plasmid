@@ -17,7 +17,11 @@ counter-intuitive. When code and spec disagree, that is a bug in one of them; sa
 project-plasmid/          <- repo root
 ├── CLAUDE.md
 ├── docs/
-│   └── design-spec.md    <- the design spec (v0.3)
+│   ├── design-spec.md    <- the design spec (v0.3)
+│   ├── balance.md        <- register of every tunable; see "Balance parameters"
+│   └── features/         <- one F##_Name.md per major feature; see "Feature docs"
+│       ├── README.md     <- the number register — check it before allocating F##
+│       └── _TEMPLATE.md
 ├── Godot/                <- vendored Godot 4.7.2 editor (git-ignored, not in the repo)
 ├── scripts/              <- PowerShell helpers (test.ps1, editor.ps1)
 └── project-plasmid/      <- THE GODOT PROJECT (project.godot lives here)
@@ -128,6 +132,67 @@ arranging blocks to raise metabolites/tick is fun on its own. Do not build the r
 layer, drafting, or the second cell until that question has an answer.
 
 Current status: scaffolding only. No simulation code has been written yet.
+
+## Feature docs (F## / M##)
+
+Internal documentation is organised by **feature**, each with a numbered doc in
+`docs/features/`, and by **milestone** within that feature.
+
+```
+F<nn>_<Title-Case-Name>.md      e.g. docs/features/F01_Main-Menu.md
+F<nn>-M<nn>                     e.g. F01-M03  — milestone 3 of feature 1
+```
+
+Rules:
+
+- **Two digits, always zero-padded.** `F01`, not `F1`. Sorting is the whole point.
+- **Numbers are allocated once and never reused or renumbered**, even if a feature is
+  cut or a milestone is abandoned — mark it `[cut]` in place. Stale references pointing
+  at the wrong thing are worse than gaps in the sequence.
+- **`docs/features/README.md` is the register.** Check it before allocating a number and
+  add the row in the same change; it is the only defence against two features both
+  claiming `F04`.
+- Feature numbers are allocation order, **not** build order. Build order lives in the
+  section above and in the register's status column.
+- File names use `Title-Case-With-Hyphens` after the underscore, matching the feature's
+  title inside the doc.
+- Milestones are numbered within their feature and are the unit of work: each one should
+  be independently completable and verifiable. State what "done" means for it.
+- Reference milestones by bare ID in commits, branches and TODOs — `F01-M03` — so they
+  are greppable. Branches: `f01-m03-short-description`.
+- Feature docs describe **how we are building it**. They do not restate the design spec;
+  they cite it (`per spec §3.1`). If a feature doc and the spec disagree, the spec wins
+  or the spec changes — do not let a feature doc quietly fork the design.
+
+`docs/features/_TEMPLATE.md` has the expected structure. Copy it rather than improvising
+a new one.
+
+## Balance parameters
+
+[docs/balance.md](docs/balance.md) is the register of every tunable number in the game —
+resource costs, tick counts, slot counts, yields, thresholds — with its current value,
+its spec section, and **where it lives in the code**. It exists so that balancing later is
+a matter of opening one document and following pointers, rather than grepping the sim for
+integers.
+
+It is a map, not the source of truth. Values live in code; if a row disagrees with the
+code, the code wins and the row is stale.
+
+Rules:
+
+- **No magic numbers in `src/sim/`.** A bare `5` in the tick loop is a balance parameter
+  hiding from the register.
+- **Global tunables live in one place:** `src/data/balance.gd`, a `class_name Balance` of
+  typed constants. One file is what makes "we'll tune it later" actually cheap.
+- **Per-entity tunables live in `Resource`s** under `src/data/` — block, promoter and
+  environment definitions. Per-environment values in particular (food delivery rate,
+  ambient toxin) must not become global constants; §7.4 makes them vary per battle.
+- **Any change that adds or alters a tunable updates `docs/balance.md` in the same
+  change.** A feature is not done with a parameter left unregistered.
+- **Feature docs cite the register; they never restate values.** Two copies of a number
+  drift, and the copy in the feature doc is always the one that goes stale.
+- When implementing a milestone, fill in the `Defined in` column for every row it
+  touches — those currently read `pending F##-M##`.
 
 ## Conventions
 

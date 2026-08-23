@@ -1,4 +1,4 @@
-# Untitled Syn Bio Autobattler — Design Spec v0.3
+# Untitled Syn Bio Autobattler — Design Spec v0.3.1
 
 **Genre:** Autobattler roguelike / engine builder
 **Core fantasy:** Design a cell. Watch it outgrow a rival.
@@ -103,7 +103,7 @@ This is intended, not a bug. It is the pressure that makes TF gating pay for its
 - **One protein per slot, no stacking.** Throughput scales by spending slots, not by expression volume.
 - **Eviction is always visible and logged in plain language.**
 - **Guarantee stability.** A single eviction is a 12.5% composition swing at 8 slots. Still coarse enough that promoter firing must be **deterministic** (§4.2), so the rack settles into a stable repeating cycle rather than a random walk.
-- **8 slots makes ratios expressible.** At 5 slots the only reachable splits were crude (4:1, 3:2). At 8 the player can hit 5:2:1 or 6:2 — promoter tuning now has enough resolution to be a real skill rather than a coin flip between two layouts. This is the main reason to prefer 8 over 5.
+- **8 slots makes ratios expressible.** At 5 slots the only reachable splits were crude (4:1, 3:2). At 8 the player can hit 4:3:1, 3:3:2 or 6:2 — promoter tuning now has enough resolution to be a real skill rather than a coin flip between two layouts. This is the main reason to prefer 8 over 5.
 - **Anchor block** (+1 length, small metabolite upkeep): exempts a protein from FIFO. Holds its slot until actively degraded. Without stacking, this is a **core block, not a niche one** — it is the only way to guarantee a floor of one critical protein (a sensor, a lone efflux pump) against a high-rate economy gene that would otherwise crowd it out. Real cost: it permanently shrinks the contested pool, and an anchored protein pays no churn but also can't be swapped out when conditions change.
 - **Degron block:** vacates the slot after N ticks. Reads as a downside; is actually a burst-economy enabler and essential for fast-clearing sensor responses.
 
@@ -146,7 +146,10 @@ Normalized so the starting genome (~12 blocks) sits at exactly 100. With **c = 1
 ### 4.2 Promoters
 
 - Fire on a clock; better promoters have shorter periods.
-- **Firing is deterministic** — a fixed period, not a per-tick probability. With 5-slot compartments and no stacking, stochastic firing would let slot composition random-walk, and a player who built for 3 enzymes + 2 pumps could find themselves at 5 + 0 when a toxin pulse lands. That is an unearned loss. **Run variance comes from the environment and the draft, not from expression noise.**
+- **Firing is deterministic** — a fixed period, not a per-tick probability. With no stacking, stochastic firing would let slot composition random-walk, and a player who built for 5 enzymes + 3 pumps could find themselves at 8 + 0 when a toxin pulse lands. That is an unearned loss. **Run variance comes from the environment and the draft, not from expression noise.**
+- **Periods are drawn from the divisors of a single base, currently 12: `12 / 6 / 4 / 3 / 2`.** This is a design constraint, not a tuning choice. Steady-state slot count is `slots × rate / total_rate` (§3.1), so racks land on whole numbers only when competing rates are small integers over a common base. A period outside the family — 8 against 12, say — yields 4.8 : 3.2 and a rack that cycles instead of settling, undoing §3.4's stability guarantee. **New promoters must come from this family, or the family must be redesigned around a new base. Do not extend it ad hoc.** Current values live in `docs/balance.md`.
+  - The payoff: **6:2 is reachable as either (4, 12) or (2, 6)** — same composition, but (2, 6) pays double synthesis upkeep forever. This is §3.1's "find the minimum promoter rate that holds the slot count you want" made discoverable rather than taught.
+  - The cost: base 12 cannot express rate 5, so a **5:2:1** rack is unreachable; 4:3:1 is its nearest neighbour. Accepted so that every tier stays fast enough to matter across a 120-tick battle. §3.4 previously used 5:2:1 as its example and was amended to match.
 - Each carries an **operator slot** that accepts a colored operator, addressable by TFs (see §6).
 - Promoters may default ON (repressible) or OFF (activatable).
 - Additional promoters carry a speed/efficiency penalty, offset by TF gating and by operons.
@@ -239,10 +242,15 @@ Mix two per battle, escalating across the run:
 
 | Tier | Yield | Requirement |
 |---|---|---|
-| Simple sugar | 2 | Directly importable |
+| Simple sugar | 3 | Directly importable |
 | Complex polymer | 6 | Needs an **extracellular** catabolic protein to pre-digest — costs external slots, and the digested product is available to the opponent too |
 
 That asymmetry alone generates a large space of interesting environments.
+
+*Simple sugar was 2 in v0.3, contradicting the yield of 3 used by §2.2 and by §7.4's food
+budget. Resolved in favour of 3. **Note the consequence:** polymer now pays 2× simple
+rather than 3×, against a cost of external slots plus leakage to the opponent. If nobody
+builds a digester in playtesting, raising polymer to 9 is the first lever.*
 
 ### 7.4 Food budget (now load-bearing)
 
@@ -321,3 +329,23 @@ Add the second cell and the shared medium.
 *Ask: do players read the opponent and adapt, or just optimize their own engine?*
 
 **Then:** run layer, drafting, environment variety, events.
+
+---
+
+## Revisions
+
+**v0.3.1** — 2026-08-23
+
+- §7.3: simple sugar yield 2 → **3**, resolving a contradiction with §2.2 and §7.4.
+  Polymer's relative advantage falls from 3× to 2× as a result; flagged in place.
+- §4.2: promoter periods specified as **12 / 6 / 4 / 3 / 2**, the divisors of 12, with the
+  reasoning for why the family is closed.
+- §4.2: corrected a stale reference to "5-slot compartments" — compartments have held 8
+  slots since §3 and §3.4 argues for 8 over 5 explicitly.
+- §3.4: example splits changed from "5:2:1 or 6:2" to "4:3:1, 3:3:2 or 6:2". The argument
+  is unchanged — 8 slots still buys real resolution — but 5:2:1 is not reachable from the
+  period family now fixed in §4.2, and citing it as an example would mislead.
+
+Live parameter values are registered in `docs/balance.md`; this document holds intent and
+the numbers it argues for. Where the two disagree, the register is the one that has been
+reconciled with the code.
