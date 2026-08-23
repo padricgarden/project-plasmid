@@ -31,5 +31,16 @@ if ($stale) {
     & $godot --headless --editor --quit --path $project | Out-Null
 }
 
-& $godot --headless --path $project --script res://tests/run_tests.gd
-exit $LASTEXITCODE
+# Capture the run so a GDScript runtime error can fail the build. Those errors abort the
+# test method they happen in without the runner ever seeing it, so a suite can report
+# "0 failures" while a test silently did almost nothing.
+$output = & $godot --headless --path $project --script res://tests/run_tests.gd 2>&1
+$exit = $LASTEXITCODE
+$output | ForEach-Object { Write-Host $_ }
+
+if ($output | Select-String -SimpleMatch "SCRIPT ERROR" -Quiet) {
+    Write-Host ""
+    Write-Host "FAILED: a GDScript error occurred during the run (see SCRIPT ERROR above)." -ForegroundColor Red
+    exit 1
+}
+exit $exit

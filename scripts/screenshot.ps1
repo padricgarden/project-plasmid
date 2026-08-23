@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Out,
     [string]$Scene = "res://src/ui/plasmid_editor.tscn",
     [int]$Select = -1,
-    [switch]$Commit
+    [switch]$Commit,
+    [int]$Tab = -1
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,5 +19,5 @@ if (-not (Test-Path $godot)) {
 
 # No --headless: capturing a viewport needs a real rendering device.
 & $godot --path $project --script res://tools/screenshot.gd -- `
-    "--out=$Out" "--scene=$Scene" "--select=$Select" "--commit=$($Commit.IsPresent.ToString().ToLower())"
+    "--out=$Out" "--scene=$Scene" "--select=$Select" "--commit=$($Commit.IsPresent.ToString().ToLower())" "--tab=$Tab"
 exit $LASTEXITCODE

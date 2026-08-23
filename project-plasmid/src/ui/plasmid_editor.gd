@@ -17,7 +17,8 @@ extends Control
 signal committed(plasmid: Plasmid, environment: EnvironmentDef)
 
 const SIDE_PANEL_WIDTH := 330
-const PALETTE_HEIGHT := 118
+const PALETTE_HEIGHT := 96
+const TAB_HEIGHT := 232
 const STARTING_NOTATION := "P12-CAT-FOOD-TERM-P12-TRA-MEM-FOOD-TERM"
 
 var draft: PlasmidDraft
@@ -37,6 +38,9 @@ var _budget_label: Label
 var _outcome_label: Label
 var _environment_picker: OptionButton
 var _palette_box: VBoxContainer
+var _readout: ReadoutPanel
+var _pipeline: PipelineView
+var _sandbox: SandboxPanel
 
 var _environments: Array[EnvironmentDef] = [
 	EnvironmentDef.abundant(), EnvironmentDef.knife_edge(), EnvironmentDef.scarce()
@@ -97,9 +101,7 @@ func _build_tree() -> void:
 
 	middle.add_child(_build_side_panel())
 
-	_topology = TopologyPreview.new()
-	_topology.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_child(_topology)
+	column.add_child(_build_readout_tabs())
 
 	column.add_child(_build_palette())
 
@@ -111,10 +113,44 @@ func _build_tree() -> void:
 	column.add_child(_notation_label)
 
 
+## The four ways of looking at what you built: where it sits (M02), what it will do
+## (F03-M02), where it pinches (F03-M03), and what happens tick by tick (F03-M01, M04).
+## Tabbed because they answer different questions about the same plasmid and there is
+## only one screen — §7.0 makes the build phase the whole decision, not a sequence of them.
+func _build_readout_tabs() -> Control:
+	var tabs := TabContainer.new()
+	tabs.custom_minimum_size = Vector2(0, TAB_HEIGHT)
+
+	_topology = TopologyPreview.new()
+	_topology.name = "Topology"
+	tabs.add_child(_topology)
+
+	_readout = ReadoutPanel.new()
+	_readout.name = "Steady state"
+	tabs.add_child(_readout)
+
+	_pipeline = PipelineView.new()
+	_pipeline.name = "Bottleneck"
+	tabs.add_child(_pipeline)
+
+	_sandbox = SandboxPanel.new()
+	_sandbox.name = "Tick through"
+	tabs.add_child(_sandbox)
+
+	return tabs
+
+
 func _build_side_panel() -> Control:
+	# Scrolled so its wrapped text cannot dictate how tall the whole screen is. Without
+	# this the side panel silently sets the minimum height of the middle row and pushes
+	# the commit bar off the bottom of the window.
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(SIDE_PANEL_WIDTH, 0)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+
 	var panel := VBoxContainer.new()
-	panel.custom_minimum_size = Vector2(SIDE_PANEL_WIDTH, 0)
-	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.custom_minimum_size = Vector2(SIDE_PANEL_WIDTH - 14, 0)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_constant_override("separation", 6)
 
 	panel.add_child(_heading("Selected block"))
@@ -141,7 +177,8 @@ func _build_side_panel() -> Control:
 	_outcome_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_outcome_label)
 
-	return panel
+	scroll.add_child(panel)
+	return scroll
 
 
 ## Grouped so the three kinds of block read as three different jobs. §5.3 makes aiming a
@@ -235,6 +272,7 @@ func _refresh() -> void:
 	_update_selection()
 	_update_topology()
 	_update_budget()
+	_update_predictions()
 
 	_remove_button.disabled = is_committed or _ring.selected_index < 0 or draft.is_empty()
 	_commit_button.disabled = is_committed or not draft.is_viable()
@@ -290,6 +328,18 @@ func _update_topology() -> void:
 		# Readthrough: this block is translated by more than one promoter (§4).
 		note = "Part of %d proteins — an upstream gene reads through into it." % shared
 	_topology.show_protein(protein, Adjacency.resolve(protein), note)
+
+
+## Re-run the sandbox and the prediction against whatever the ring holds now. Both are
+## full runs of a copy of the cell, which is affordable because the sim is small and is
+## the only way the panel cannot drift from the battle (§9.2).
+func _update_predictions() -> void:
+	if draft.is_empty():
+		return
+	var plasmid := draft.to_plasmid()
+	_readout.show_prediction(Prediction.run(plasmid, environment))
+	_pipeline.show_prediction(Prediction.run(plasmid, environment))
+	_sandbox.rebind(plasmid, environment)
 
 
 ## Block count and the burden-adjusted growth target (§4.1). Predicted throughput is

@@ -15,6 +15,7 @@ var _frames := 0
 var _scene_path := "res://src/ui/plasmid_editor.tscn"
 var _out_path := "screenshot.png"
 var _select := -1
+var _tab := -1
 ## Drive the screen into its committed state before capturing, so the post-commit layout
 ## can be looked at too.
 var _commit := false
@@ -41,6 +42,8 @@ func _process(_delta: float) -> bool:
 			_target.select_block(_select)
 		if _commit and _target.has_method("_on_commit_pressed"):
 			_target._on_commit_pressed()
+		if _tab >= 0:
+			_select_tab(_target)
 
 	if _frames < _settle_frames:
 		return false
@@ -69,3 +72,14 @@ func _read_arguments() -> void:
 				_select = int(parts[1])
 			"--commit":
 				_commit = parts[1] == "true"
+			"--tab":
+				_tab = int(parts[1])
+
+
+## Switch the first TabContainer found to a given tab, so each readout can be captured.
+func _select_tab(node: Node) -> void:
+	if node is TabContainer:
+		node.current_tab = _tab
+		return
+	for child in node.get_children():
+		_select_tab(child)

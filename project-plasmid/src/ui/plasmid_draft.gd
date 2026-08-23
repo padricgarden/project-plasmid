@@ -156,7 +156,34 @@ func problems() -> PackedStringArray:
 	elif inert == expressed:
 		found.append("Every protein this expresses is inert — none of them do any work.")
 
+	var dead := dead_weight_blocks()
+	if not dead.is_empty():
+		# Pure cost: §4.1 charges growth for every block on the ring whether or not any
+		# promoter ever reads it, so an untranscribed domain is worse than no block at all.
+		found.append(
+			"%d block(s) are never transcribed. They still raise your growth target."
+			% dead.size()
+		)
+
 	return found
+
+
+## Ring positions holding a domain or target that no promoter ever reads — typically
+## blocks placed after the last terminator, where transcription never reaches them.
+func dead_weight_blocks() -> PackedInt32Array:
+	var covered := {}
+	for transcript in transcripts():
+		for protein in transcript.proteins:
+			for index in protein.ring_indices:
+				covered[index] = true
+
+	var dead := PackedInt32Array()
+	for i in range(_blocks.size()):
+		if _blocks[i].is_structural():
+			continue
+		if not covered.has(i):
+			dead.append(i)
+	return dead
 
 
 func is_viable() -> bool:

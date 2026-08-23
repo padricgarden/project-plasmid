@@ -116,3 +116,15 @@ static func palette() -> Array[Block]:
 		for block in group["blocks"]:
 			offered.append(block)
 	return offered
+
+
+## Distinct colours for genes, so a slot rack reads as "six of this one, two of that"
+## at a glance. Keyed by promoter ring position, which is how the sim identifies a gene.
+const GENE_COLOURS := [
+	Color("59c27a"), Color("3fa7d6"), Color("e2c044"), Color("d98e32"),
+	Color("b07de0"), Color("e06c5a"), Color("4ec9b0"), Color("c9a0dc"),
+]
+
+
+static func gene_colour(promoter_index: int) -> Color:
+	return GENE_COLOURS[posmod(promoter_index, GENE_COLOURS.size())]
