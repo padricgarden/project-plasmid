@@ -50,7 +50,7 @@ type that every later milestone emits into.
 partial spend, banked growth surviving a pool wipe, and the §2.5 stall (pool at zero →
 spending actions fail rather than going negative).
 
-### F01-M02 — Plasmid, transcription, and a text notation
+### F01-M02 — Plasmid, transcription, and a text notation ✅
 
 Circular ordered block list; promoters, terminators, readthrough wrapping from last gene
 to first, RBS splitting a transcript into multiple proteins (§4, §4.2). Includes a compact
@@ -138,3 +138,15 @@ common base, and the register explains why extending the set breaks it.
 - `2026-08-23` — Tick resolution order opened at the top of `SimState.step()` with ageing
   last, so a metabolite produced during a tick banks exactly MATURATION_AGE ticks later.
   Steps 1 and 2 are placeholders for M04 and M05.
+- `2026-08-23` — **M02 done.** Transcription reads forward from a promoter until a
+  terminator, or until it returns to the promoter it started from — that second guard is
+  what stops an unterminated ring looping forever, and it makes "read the whole ring
+  once" the natural limit rather than a special case. Promoters met mid-transcript are
+  read *through* rather than stopped at, so §4's "one promoter drives two genes" adds a
+  transcript without replacing one; the downstream promoter still fires independently.
+  Structural blocks are consumed but never translated, so a fused readthrough protein is
+  both genes' domains concatenated with the promoter between them dropped.
+- `2026-08-23` — Notation is `P12-CAT-FOOD-TERM`, parsed into a `ParseResult` that is
+  either a whole plasmid or an error naming the offending token — never half-built.
+  `parse()` **rejects promoter periods outside `Balance.PROMOTER_PERIODS`**, which turns
+  the closed-family rule from a note in the register into something the code enforces.

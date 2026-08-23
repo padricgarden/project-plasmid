@@ -69,7 +69,7 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Promoter period tiers | 12, 6, 4, 3, 2 | §4.2 | pending F01-M04 | Divisors of 12. See below — the set is load-bearing. |
+| Promoter period tiers | 12, 6, 4, 3, 2 | §4.2 | `Balance.PROMOTER_PERIODS` | Divisors of 12. See below. Enforced by `PlasmidNotation.parse()`, not just documented. |
 | Starting promoter tier | I (period 12) | §2.4 | pending F01-M05 | ~0.08 synthesis/tick per gene, matching §2.4's overhead. |
 | Additional-promoter penalty | ? | §4.2 | pending F01-M04 | Spec says "speed/efficiency penalty", no value. |
 | Operator colours | 3–4 | §6 | pending F05-M03 | |

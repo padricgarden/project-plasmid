@@ -44,7 +44,9 @@ desktop.ini
 .idea/
 *.swp
 .vscode/*
-!.vscode/settings.json
+# settings.json stays ignored: the Godot Tools extension writes an absolute path to
+# the editor executable into it, which is machine-specific and breaks on any other
+# checkout. extensions.json is shareable, so it is not.
 !.vscode/extensions.json
 
 # ---- Local scratch ----
