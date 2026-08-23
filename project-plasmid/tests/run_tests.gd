@@ -7,6 +7,11 @@ extends SceneTree
 ## Discovers every `test_*.gd` under `res://tests/`, instantiates it, and calls
 ## each method named `test_*`. A test fails by calling `fail(msg)` or by letting
 ## an assertion push an error. Exit code is non-zero if anything failed.
+##
+## Runs on the first `_process` frame, not in `_init` or `_initialize`. The scene tree
+## root is not yet inside the tree during either of those, so a Control added to it never
+## gets its `_ready()` called and every scene test sees a half-built node. Scene-level
+## tests (F02 onward) depend on running after the tree is live.
 
 const TESTS_DIR := "res://tests"
 
@@ -15,7 +20,19 @@ var _current := ""
 var _assertions := 0
 
 
-func _init() -> void:
+var _has_run := false
+
+
+## Returning true ends the main loop; the exit code comes from the quit() below.
+func _process(_delta: float) -> bool:
+	if _has_run:
+		return true
+	_has_run = true
+	_run_all()
+	return true
+
+
+func _run_all() -> void:
 	var files := _discover(TESTS_DIR)
 	files.sort()
 	if files.is_empty():

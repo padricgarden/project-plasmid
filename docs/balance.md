@@ -74,6 +74,7 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 |---|---|---|---|---|
 | Promoter period tiers | 12, 6, 4, 3, 2 | §4.2 | `Balance.PROMOTER_PERIODS` | Divisors of 12. See below. Enforced by `PlasmidNotation.parse()`, not just documented. |
 | Starting promoter tier | I (period 12) | §2.4 | pending F07-M01 | Used by every test plasmid, but no starting genome is authored until the run layer. |
+| Starting genome | `P12-CAT-FOOD-TERM-P12-TRA-MEM-FOOD-TERM` (9 blocks) | §2.4, §5.4 | `PlasmidEditor.STARTING_NOTATION` | **Placeholder.** F07-M01 owns the real one; §4.1 normalises burden to 12 blocks, this is 9. |
 | Additional-promoter penalty | ? | §4.2 | pending F01-M04 | Spec says "speed/efficiency penalty", no value. |
 | Operator colours | 3–4 | §6 | pending F05-M03 | |
 

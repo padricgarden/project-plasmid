@@ -1,6 +1,6 @@
 # F02: Plasmid Editor
 
-**Status:** planned
+**Status:** in progress
 **Spec sections:** §4, §5, §5.3, §10
 **Depends on:** F01
 
@@ -33,7 +33,7 @@ doing, but not before the gate.
 
 ## Milestones
 
-### F02-M01 — Ring rendering and block placement
+### F02-M01 — Ring rendering and block placement ✅
 
 The circular plasmid drawn with its blocks in order; insert, remove, and drag-to-reorder.
 
@@ -75,3 +75,25 @@ edited afterwards.
 ## Changelog
 
 - `2026-08-23` — Created.
+- `2026-08-23` — **M01 done.** The ring draws the plasmid as a ring, with index 0 pinned
+  to the top and the wrap point marked, so §4's "the last gene reads into the first" is
+  visible rather than a rule to be surprised by. Blocks are placed from a palette,
+  reordered by dragging one chip onto another, and removed from the side panel.
+- `2026-08-23` — **All editing behaviour lives in `PlasmidDraft`, a `RefCounted` with no
+  scene dependency**, so insert/remove/move/validate are tested headlessly and the scene
+  layer only draws and forwards input. This is the split worth protecting: a rule that
+  exists only inside a `_gui_input` handler cannot be tested and will drift from the sim.
+  The scene tests drive the editor through its own handlers and assert that what comes
+  out the far end runs a battle.
+- `2026-08-23` — The `.tscn` holds only the root node and its script; the tree is built
+  in `_ready()`. Nearly all of it is dynamic — the ring rebuilds on every edit, the
+  palette is generated from the block grammar — so a hand-authored scene would be one
+  more thing to keep in sync. Worth revisiting once the layout stops moving.
+- `2026-08-23` — **Test runner bug found and fixed, affecting everything downstream.**
+  It ran the suite from `_init()`, where the scene tree root is not yet inside the tree,
+  so any `Control` added to it never received `_ready()` — scene tests saw half-built
+  nodes with null members. Neither `_init` nor `_initialize` works; the suite now runs on
+  the first `_process` frame. F03 and F04 would have hit this immediately.
+- `2026-08-23` — Placing a block inserts *after* the current selection rather than
+  appending, so a plasmid is built left to right instead of every block needing a drag.
+  Selection travels with a dragged block for the same reason.
