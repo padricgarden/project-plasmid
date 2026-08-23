@@ -1,0 +1,52 @@
+# ---- Godot engine binaries (vendored editor, not source) ----
+Godot/
+*.exe
+*.exe.config
+
+# ---- Godot editor / import artifacts ----
+.godot/
+.import/
+*.import.bak
+*.translation
+
+# Export presets can embed local paths and signing credentials.
+export_presets.cfg
+
+# ---- Build output ----
+build/
+builds/
+export/
+exports/
+dist/
+*.pck
+*.zip
+*.apk
+*.aab
+*.dmg
+*.tmp
+
+# ---- Mono / C# (only if we ever add it) ----
+.mono/
+data_*/
+mono_crash.*.json
+obj/
+bin/
+*.csproj.user
+
+# ---- OS cruft (OneDrive-synced checkout) ----
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+*~
+
+# ---- Editors ----
+.idea/
+*.swp
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# ---- Local scratch ----
+scratch/
+*.local
