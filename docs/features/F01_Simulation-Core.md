@@ -61,7 +61,7 @@ and later carries NPC rosters, so it is not a side quest.
 one-promoter two-RBS transcript yields two separate protein definitions; a plasmid
 round-trips through the text notation unchanged.
 
-### F01-M03 — Adjacency and topology resolution
+### F01-M03 — Adjacency and topology resolution ✅
 
 The §5.3 rules, which are what make arrangement a puzzle: a target domain sets the target
 for *both* neighbours; an effector with two different target neighbours acts on both at
@@ -150,3 +150,22 @@ common base, and the register explains why extending the set breaks it.
   either a whole plasmid or an error naming the offending token — never half-built.
   `parse()` **rejects promoter periods outside `Balance.PROMOTER_PERIODS`**, which turns
   the closed-family rule from a note in the register into something the code enforces.
+- `2026-08-23` — **M03 done.** `Adjacency.resolve()` derives compartment and function
+  from block order alone; nothing about what a protein does is stored on a block, so the
+  §5.3 rules live in exactly one place. Inert effectors are reported rather than dropped,
+  each carrying a plain reason — F02-M03 and F03-M02 both need to show a player that a
+  block they paid for is doing nothing.
+- `2026-08-23` — **Three rules §5.3 leaves open, decided in `adjacency.gd`.** (1) A
+  membrane-embedded transporter reaches *through* the membrane domain it sits against.
+  Without it, exchange is unreachable in principle: a transporter's two neighbours can
+  only straddle the membrane if the membrane *is* the transporter. Reach-through is
+  transporter-only, since rule 3 already makes membrane interaction their special case.
+  (2) The same target on both sides resolves inert, not as a free exchange — food for
+  food moves nothing, and §2.2 prices exchange at zero, so calling it an exchange would
+  be a free no-op. (3) The first membrane domain sets the boundary; one boundary keeps
+  the topology preview drawable.
+- `2026-08-23` — §5.3 rule 2's cost doubling is structurally present (functions carry a
+  distinct-target list) but **cannot be exercised until F05 adds Toxin** — Food is the
+  only target in the Prototype 1 grammar, so no arrangement yields two different ones.
+  The cost itself is M05's; deliberately not computed here, because §2.2 makes exchange
+  free while rule 2 doubles, and those two would fight inside one multiplier.
