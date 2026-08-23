@@ -1,6 +1,6 @@
 # F01: Simulation Core
 
-**Status:** in progress
+**Status:** done
 **Spec sections:** §2, §3, §4, §5, §7.0, §7.3, §7.4
 **Depends on:** nothing
 
@@ -34,9 +34,9 @@ in `src/data/`. One `SimState` object holds the whole world (both cells and the 
 even though Prototype 1 has one cell) so that F06 adds an opponent without a rewrite.
 `tick()` takes state and returns state plus an event list.
 
-Resolution order within a tick matters and must be fixed and documented once M04 lands —
-pick it deliberately, write it down at the top of the tick function, and do not let it
-drift.
+Resolution order within a tick is fixed and documented at the top of `SimState.step()`.
+It is load-bearing — the §2.4 benchmark is sensitive to where spending falls relative to
+ageing — so treat that comment as the specification and do not let the code drift from it.
 
 ## Milestones
 
@@ -95,7 +95,7 @@ from §4.1.
 not land, that is a finding about the spec, not a licence to retune quietly:** record it
 in the changelog below and raise it.
 
-### F01-M06 — Battle resolution
+### F01-M06 — Battle resolution ✅
 
 The 120-tick limit, victory at the burden-adjusted growth target, and the outcome record.
 Lysis is wired as a condition but cannot fire until toxin exists in F05.
@@ -119,9 +119,8 @@ common base, and the register explains why extending the set breaks it.
 
 ## Open questions
 
-- **Tick resolution order.** Partly settled — ageing is last, recorded at the top of
-  `SimState.step()`. Still open: whether synthesis resolves before or after transport,
-  which shifts the §2.4 baseline slightly. Decide at M05, when both exist to order.
+- ~~**Tick resolution order.**~~ Settled and recorded at the top of `SimState.step()`:
+  delivery, racking, firing, effectors (transport then catabolism), ageing.
 - **Passive diffusion** (§10) — near-zero, or inversely scaling with concentration? Left
   out of M05 entirely until there is a reason to add it.
 
@@ -219,3 +218,23 @@ common base, and the register explains why extending the set breaks it.
   enzyme on the extracellular side of a membrane protein destroys medium food and yields
   nothing to anyone. Yielding metabolites there instead would have been free food with no
   transport tax, strictly better than importing.
+- `2026-08-23` — **M06 done, and F01 with it.** `Battle` drives a `SimState` and decides
+  when the match is over; it knows nothing about how fast anyone is watching, which is
+  what lets F04's speed controls change tick consumption without changing a tick.
+  Division is tested before the clock, so reaching the target on the final tick is a win
+  rather than a timeout.
+- `2026-08-23` — **Determinism proven byte-for-byte, not merely outcome-for-outcome.**
+  Two runs from identical inputs produce identical event streams; a run split in half and
+  resumed from a `clone()` produces the same stream as one run straight through. That
+  second test is the real one — it proves the copy carries every piece of state the tick
+  loop reads, which is what F03-M01's sandbox, F04-M02's instant resolve and F08-M02's
+  saved runs all depend on. Guarded by a companion test proving the digest can tell two
+  different battles apart, so it cannot pass by being blind.
+- `2026-08-23` — Lysis is wired without being invented: `SimState.is_lysing()` exists and
+  `Battle` consults it, but it returns false and its two numbers are deliberately absent
+  from the register. There is no Toxin block until F05, so registering a threshold now
+  would be registering fiction. F05-M01 makes the condition true; it does not have to
+  find every place that should have asked.
+- `2026-08-23` — Bug caught by the tests: `ticks_remaining()` reported 47 on a battle
+  already won by early division. Zero once decided, not merely once the clock runs out —
+  F04's clock would otherwise show time left on a finished match.

@@ -31,6 +31,9 @@ enum Type {
 	## An extracellular enzyme destroyed food in the medium. Pure denial: the metabolites
 	## are outside the cell and lost to everyone (§8).
 	FOOD_DESTROYED,
+	## The battle reached a decided end (§1, §7.0). Emitted by [Battle], not [SimState] —
+	## the world does not know it is in a match.
+	BATTLE_ENDED,
 }
 
 ## What happened.

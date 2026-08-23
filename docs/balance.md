@@ -73,7 +73,7 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
 | Promoter period tiers | 12, 6, 4, 3, 2 | §4.2 | `Balance.PROMOTER_PERIODS` | Divisors of 12. See below. Enforced by `PlasmidNotation.parse()`, not just documented. |
-| Starting promoter tier | I (period 12) | §2.4 | pending F01-M05 | ~0.08 synthesis/tick per gene, matching §2.4's overhead. |
+| Starting promoter tier | I (period 12) | §2.4 | pending F07-M01 | Used by every test plasmid, but no starting genome is authored until the run layer. |
 | Additional-promoter penalty | ? | §4.2 | pending F01-M04 | Spec says "speed/efficiency penalty", no value. |
 | Operator colours | 3–4 | §6 | pending F05-M03 | |
 
@@ -115,7 +115,7 @@ buys and was amended to 4:3:1 in spec v0.3.1 for this reason.
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Battle length | 120 ticks | §7.0 | pending F01-M06 | |
+| Battle length | 120 ticks | §7.0 | `Balance.BATTLE_LENGTH_TICKS` | At knife-edge one cell divides ~tick 73, so two splitting the medium both fall short. |
 | Tick duration | 0.5 s | §7.0 | pending F04-M02 | Presentation only — never affects sim outcome. |
 | Speed multipliers | 1× / 2× / 4× / instant | §7.0 | pending F04-M02 | |
 | Lysis toxin threshold | ? | §1 | pending F05-M01 | |

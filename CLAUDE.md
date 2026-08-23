@@ -147,7 +147,16 @@ one environment, slots, ticks, a growth bar. The question it answers is whether
 arranging blocks to raise metabolites/tick is fun on its own. Do not build the run
 layer, drafting, or the second cell until that question has an answer.
 
-Current status: scaffolding only. No simulation code has been written yet.
+Current status: **F01 (Simulation Core) is complete** — plasmid, transcription, adjacency
+resolution, slot racks, the metabolite economy, the medium, and battle resolution, all
+headless and deterministic. 95 tests. Nothing is rendered yet; the next work is F02
+(plasmid editor) and F03 (legibility layer), which together with F04 reach Prototype 1's
+gate. See [docs/features/README.md](docs/features/README.md) for the register.
+
+Three findings from F01 are worth knowing before touching the economy — §2.4's baseline
+benchmark cannot reproduce under 8-slot rules, plasmid burden is not what restrains
+engine-building (churn is), and a cell needs a starting endowment the spec never mentions.
+All three are written up in [docs/balance.md](docs/balance.md) under "Open".
 
 ## Feature docs (F## / M##)
 

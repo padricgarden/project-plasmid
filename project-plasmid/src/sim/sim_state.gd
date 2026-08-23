@@ -117,6 +117,19 @@ func growth_target() -> int:
 	return Burden.growth_target(plasmid.size())
 
 
+## Whether the cell has been over the toxin threshold long enough to burst (§1).
+##
+## Always false in Prototype 1: there is no Toxin block in the grammar until F05, so the
+## condition cannot become true. The call site exists now so that F05-M01 only has to
+## make this return something — not also hunt down every place that should have asked.
+##
+## Its two numbers, the threshold and the consecutive-tick count, are deliberately
+## [i]not[/i] invented yet. The spec gives neither, and putting values in the register
+## for a path no test can reach would be registering fiction.
+func is_lysing() -> bool:
+	return false
+
+
 ## Install a genome and compile what it expresses. Compilation happens here rather than
 ## per firing because §5.3 resolution cannot change unless the plasmid does.
 func set_plasmid(p_plasmid: Plasmid) -> void:

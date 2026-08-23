@@ -99,6 +99,17 @@ const RATE_SCALE := 100
 const STARTING_METABOLITE_BUFFER := 4
 
 
+## Ticks a battle runs before the clock decides it. Spec §7.0 — 120 ticks at 0.5 s each,
+## roughly a minute of watching.
+##
+## §2.4 chose it so the naked starting build cannot coast to a win. That reasoning no
+## longer holds the way the spec meant it (see F01-M05's findings), but the number still
+## does its job: at §7.4's knife-edge density a single cell divides around tick 73, so a
+## second cell splitting the same medium leaves both short — which is exactly the contest
+## §7.4 describes.
+const BATTLE_LENGTH_TICKS := 120
+
+
 ## §4.1's burden curve: `target = BASE + c × (B^exp − B_start^exp)`, normalised so a
 ## starting genome sits at exactly BASE.
 ##
