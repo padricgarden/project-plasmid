@@ -33,9 +33,9 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 |---|---|---|---|---|
 | Maturation age | 5 ticks | §2.1 | `Balance.MATURATION_AGE` | Primary tension knob, paired with shock frequency (§7.5). |
 | Spend order | youngest-first | §2.1 | `MetabolitePool.try_spend()` | Policy, not a number. Do not make it configurable. |
-| Catabolic on food — yield | 3 per unit | §2.2 | pending F01-M05 | Base yield. Tier yields in §7.3 are multiples of it. |
-| Catabolic on food — cooldown | 3 ticks | §2.2 | pending F01-M05 | |
-| Transport cost | 1 per unit | §2.2 | pending F01-M05 | "The workhorse tax." |
+| Catabolic on food — yield | 3 per unit | §2.2 | `EnvironmentDef.food_yield` | Base yield. Tier yields in §7.3 are multiples of it. |
+| Effector action cooldown | 3 ticks | §2.2 | `Balance.EFFECTOR_COOLDOWN_TICKS` | **Applied to all effectors, not just catabolism** — see Open. |
+| Transport cost | 1 per unit | §2.2 | `Balance.TRANSPORT_COST` | "The workhorse tax." |
 | Exchange cost | 0 | §2.2 | pending F05 | Requires both targets present. |
 | Catabolic on toxin — cost | 1 per unit | §2.2 | pending F05-M01 | Defense is deliberately cheap. |
 | Anabolic toxin — cost | 2 per unit | §2.2 | pending F05-M05 | Offense costs double defense. |
@@ -43,6 +43,8 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 | Sensing cost | 0 | §2.2 | pending F05-M02 | Never tax the circuit itself. |
 | TF cost | 0 | §2.2 | pending F05-M03 | Never tax the circuit itself. |
 | Protein synthesis cost | `ceili(blocks / 3)` | §2.2 | `GeneExpression.synthesis_cost()` | Rounds **up**. Charged so expression is an economic decision. |
+| Starting endowment buffer | 4 + one round of synthesis | — | `Balance.STARTING_METABOLITE_BUFFER` | **Not in the spec.** Without it the cell deadlocks at tick 0 — see Open. |
+| Rate scale | 100 | — | `Balance.RATE_SCALE` | Representation, not balance: keeps fractional rates integer. |
 
 ## Slots — spec §3
 
@@ -61,10 +63,10 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Base growth target | 100 | §4.1 | pending F01-M05 | |
-| Burden coefficient `c` | 1.5 | §4.1 | pending F01-M05 | **Suspect** — spec flags it as likely too weak. See Open. |
-| Burden exponent | 1.1 | §4.1 | pending F01-M05 | "Tune `c`, not the exponent." |
-| Starting block count | 12 | §4.1 | pending F01-M05 | Normalises the start to exactly 100. |
+| Base growth target | 100 | §4.1 | `Balance.BASE_GROWTH_TARGET` | Curve implemented in `Burden.growth_target()`; matches §4.1's table exactly. |
+| Burden coefficient `c` | 1.5 | §4.1 | `Balance.BURDEN_COEFFICIENT` | Weak, and that is fine — churn and food scarcity do the restraining. See Open. |
+| Burden exponent | 1.1 | §4.1 | `Balance.BURDEN_EXPONENT` | "Tune `c`, not the exponent." |
+| Starting block count | 12 | §4.1 | `Balance.STARTING_BLOCK_COUNT` | Normalises the start to exactly 100. |
 
 ## Promoters — spec §4.2
 
@@ -125,11 +127,11 @@ Per-environment values; these belong in environment Resources, not in `Balance`.
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Simple sugar yield | 3 | §7.3 | pending F01-M05 | **Was 2 in the spec table**; raised to 3 to match §2.2/§7.4. |
+| Simple sugar yield | 3 | §7.3 | `EnvironmentDef.food_yield` | **Was 2 in the spec table**; raised to 3 to match §2.2/§7.4. |
 | Complex polymer yield | 6 | §7.3 | pending F06 | Needs extracellular pre-digestion. Now only 2× simple — see Open. |
-| Food delivery — abundant | 1.5 / tick | §7.4 | pending F01-M05 | Engine-building wins. Early battles. |
-| Food delivery — knife-edge | 0.75 / tick | §7.4 | pending F01-M05 | **The default.** Capture rate decides. |
-| Food delivery — scarce | 0.4 / tick | §7.4 | pending F07-M04 | Neither cell can finish honestly. Late battles. |
+| Food delivery — abundant | 1.5 / tick | §7.4 | `EnvironmentDef.abundant()` | Engine-building wins. Early battles. |
+| Food delivery — knife-edge | 0.75 / tick | §7.4 | `EnvironmentDef.knife_edge()` | **The default.** Capture rate decides. |
+| Food delivery — scarce | 0.4 / tick | §7.4 | `EnvironmentDef.scarce()` | Neither cell can finish honestly. Late battles. |
 | Passive diffusion | ~0 | §10 | not planned | Left out until there is a reason. Trap-block risk if too high. |
 
 ## Run structure — spec §8
@@ -156,11 +158,39 @@ the rows most likely to move once F01-M05 produces real numbers.
    could become a trap. Not blocking — polymer is not implemented until F06 — but if
    nobody builds an extracellular digester there, this is the first number to try (9
    restores the 3× ratio).
-3. **Burden coefficient `c = 1.5`.** §4.1 flags its own value: a ~38-block engine build
-   may divide in ~68 ticks against a 120-tick limit, meaning burden restrains nothing.
-   The spec's stated preference is to leave `c` weak and let food scarcity do the
-   limiting — which makes the §7.4 delivery rates load-bearing rather than flavour.
-   Measure in F01-M05 before changing either.
+3. ~~**Burden coefficient `c = 1.5`.**~~ **Measured at F01-M05: leave it alone.** §4.1
+   feared burden was too weak to restrain engine-building. It is — but engine-building
+   turns out to be restrained hard by something else, so the weakness does not matter.
+   Throughput is **food-limited, not slot-limited**: the starting cell already eats
+   everything the medium delivers, so extra genes buy no yield at all. What they buy is
+   §3.2's churn — synthesis upkeep every tick, forever. Measured over 400 ticks at
+   knife-edge density, a 27-block six-gene engine catabolises the *same* food as the
+   9-block starting cell, pays over 5× the synthesis upkeep, and banks less than half the growth
+   (0.52/tick against 1.33). At scarce density it never divides at all: upkeep drains the
+   pool, transport becomes unaffordable, and it starves beside food it cannot pay to
+   import — §2.5's death spiral reached by overbuilding rather than by toxin.
+   The spec's stated preference — keep balance in the environment — is validated. Note
+   the caveat: upkeep scales with *promoter rate*, not block count, so a long plasmid on
+   slow promoters is punished far less than this measurement suggests.
+7. **The 3-tick cooldown was made universal.** §2.2 attaches it only to Catabolic+Food
+   and gives transport none, but §2.3's ceiling ("eight internal slots ≈ 8
+   metabolites/tick") and §2.4's baseline ("import cost 1 food / 3 ticks = 0.33/tick")
+   both require it everywhere. Applied universally on that basis; the spec should say so.
+8. **A cell needs a starting endowment and the spec never mentions one.** With an empty
+   pool at tick 0 no promoter can pay for synthesis, so no protein is built, so nothing
+   ever earns — a permanent deadlock, distinct from §2.5's recoverable spiral. Measured:
+   an unfunded starting cell stalls 68 times in 400 ticks and racks nothing. The
+   endowment is one full round of synthesis plus a buffer of 4, scaled to the genome
+   because a flat value large enough for the starting cell still soft-locks a six-gene
+   plasmid — and drafting only grows plasmids (§8).
+9. **§2.4's baseline benchmark does not reproduce, and cannot.** It predicts ≈0.6
+   metabolites/tick and ~165 ticks for "one Catabolic+Food, one importer", but under §3's
+   slot rules a lone gene fills all eight slots of its compartment, so the starting cell
+   runs eight enzymes and eight importers. §2.4 predates the 5→8 slot change (§3.4) and
+   its arithmetic was never revisited. Measured for the starting cell over 400 ticks:
+   **2.81/tick abundant, 1.33/tick knife-edge, 0.63/tick scarce.** The 0.6 figure does
+   still appear — at scarce density — but as a property of the environment rather than of
+   the cell. §2.4 should be rewritten around a named environment.
 4. ~~**Promoter period tiers are unspecified.**~~ **Resolved 2026-08-23:** five tiers on
    the divisors of 12 — see [Promoters](#promoters--spec-42) for the reasoning and for
    why the set must not be extended ad hoc.

@@ -18,16 +18,19 @@ extends RefCounted
 ## where spending falls relative to ageing.
 ##
 ## [codeblock]
-##   1. finished builds occupy slots, evicting the oldest if the rack is full
-##   2. promoters at their period fire: pay synthesis, start builds
-##   3. (F01-M05) resident proteins act: transport, then catabolism
-##   4. metabolites age; anything reaching MATURATION_AGE banks
+##   1. the environment drips food into the medium
+##   2. finished builds occupy slots, evicting the oldest if the rack is full
+##   3. promoters at their period fire: pay synthesis, start builds
+##   4. resident proteins act: transport first, then catabolism
+##   5. metabolites age; anything reaching MATURATION_AGE banks
 ## [/codeblock]
 ##
 ## Racking before firing is what makes build time honest: a protein with N build ticks
-## occupies its slot exactly N ticks after the firing that paid for it. Ageing last means
-## a metabolite produced during a tick ends that tick at age 0 and banks exactly
-## [constant Balance.MATURATION_AGE] ticks later, which is the reading §2.1 implies.
+## occupies its slot exactly N ticks after the firing that paid for it. Transport before
+## catabolism means food imported on a tick is digestible on that same tick, so the
+## pipeline has no built-in stall. Ageing last means a metabolite produced during a tick
+## ends that tick at age 0 and banks exactly [constant Balance.MATURATION_AGE] ticks
+## later, which is the reading §2.1 implies.
 
 ## Ticks elapsed. The tick currently being simulated during [method step].
 var tick: int = 0
@@ -57,11 +60,61 @@ var _builds: Array[PendingBuild] = []
 var _events: Array[SimEvent] = []
 
 
+## The shared environment pool. One object even in Prototype 1, because F06's second
+## cell draws from this same one (§7.1).
+var medium: Medium
+
+## Food the cell has imported and not yet digested.
+var internal_food: int = 0
+
+## What the environment delivers, and what its food is worth. Null means a bare sim with
+## no environment at all — nothing is delivered and nothing can be imported. A battle
+## must set one.
+var environment: EnvironmentDef = null
+
+
 func _init() -> void:
 	pool = MetabolitePool.new()
 	plasmid = Plasmid.new()
+	medium = Medium.new()
 	for i in range(ResolvedProtein.Compartment.size()):
 		racks.append(SlotRack.new(Balance.SLOTS_PER_COMPARTMENT))
+
+
+## Set up a battle: install the genome and the environment, and endow the cell with the
+## metabolites it needs to express anything at all.
+##
+## The endowment is what separates a battle from a bare sim. Without it the cell cannot
+## pay for its first transcript, so it never builds a protein, so it never earns —
+## a permanent deadlock rather than the §2.5 death spiral, which is a *recoverable*
+## economic misjudgement. Tests that want to observe an unfunded cell should call
+## [method set_plasmid] and [method set_environment] directly instead.
+func begin_battle(p_plasmid: Plasmid, p_environment: EnvironmentDef) -> void:
+	set_plasmid(p_plasmid)
+	set_environment(p_environment)
+	pool.add(starting_endowment())
+
+
+## One full round of synthesis plus a buffer, so a cell can always express its genome
+## once and fund the first import that starts paying it back. Scaled to the genome
+## because a flat value soft-locks larger plasmids — see [constant
+## Balance.STARTING_METABOLITE_BUFFER].
+func starting_endowment() -> int:
+	var total := Balance.STARTING_METABOLITE_BUFFER
+	for unit in _units:
+		total += unit.total_synthesis_cost()
+	return total
+
+
+## Install an environment and seed the medium with whatever it starts with (§7.4).
+func set_environment(p_environment: EnvironmentDef) -> void:
+	environment = p_environment
+	medium.food = p_environment.starting_food
+
+
+## Banked growth needed to divide, given how many blocks the plasmid carries (§4.1).
+func growth_target() -> int:
+	return Burden.growth_target(plasmid.size())
 
 
 ## Install a genome and compile what it expresses. Compilation happens here rather than
@@ -86,9 +139,10 @@ func builds_in_progress() -> int:
 
 ## Advance one tick. Returns everything that happened during it, in order.
 func step() -> Array[SimEvent]:
+	_deliver_food()
 	_finish_builds()
 	_fire_promoters()
-	# Step 3 of the resolution order lands here as F01-M05.
+	_run_effectors()
 
 	var matured := pool.advance()
 	if matured > 0:
@@ -136,6 +190,9 @@ func clone() -> SimState:
 	var copy := SimState.new()
 	copy.tick = tick
 	copy.pool = pool.clone()
+	copy.medium = medium.clone()
+	copy.environment = environment
+	copy.internal_food = internal_food
 	copy.banked_growth = banked_growth
 	copy.plasmid = plasmid
 	copy._units = _units
@@ -148,7 +205,7 @@ func clone() -> SimState:
 	return copy
 
 
-## Step 1: proteins whose build time has elapsed take a slot.
+## Step 2: proteins whose build time has elapsed take a slot.
 func _finish_builds() -> void:
 	var still_building: Array[PendingBuild] = []
 	for build in _builds:
@@ -160,7 +217,7 @@ func _finish_builds() -> void:
 	_builds = still_building
 
 
-## Step 2: every promoter whose period divides this tick fires.
+## Step 3: every promoter whose period divides this tick fires.
 ##
 ## An operon shares a clock and shares regulation (§4), so it also shares its bill: the
 ## transcript is paid for as a unit, and one the cell cannot afford expresses none of its
@@ -192,10 +249,99 @@ func _fire_promoters() -> void:
 			_builds.append(PendingBuild.new(product, product.build_ticks))
 
 
+## Step 1: the environment drips.
+func _deliver_food() -> void:
+	if environment == null:
+		return
+	var delivered := medium.deliver(environment)
+	if delivered > 0:
+		_emit(SimEvent.Type.FOOD_DELIVERED, {"count": delivered, "in_medium": medium.food})
+
+
+## Step 4: every resident effector whose cadence lands on this tick does its work.
+##
+## Transport runs across all compartments before any catabolism, so food imported this
+## tick can be digested this tick. Racks are walked in compartment order and occupants
+## oldest-first, which is what keeps contention for the last unit of food deterministic
+## (§4.2) once F06 has two cells reaching for it.
+func _run_effectors() -> void:
+	for compartment in range(racks.size()):
+		for occupant in racks[compartment].occupants():
+			if not occupant.acts_on_tick(tick):
+				continue
+			for function in occupant.product.resolved.functions:
+				match function.kind:
+					ProteinFunction.Kind.IMPORT:
+						_import_food()
+					ProteinFunction.Kind.EXPORT:
+						_export_food()
+					# EXCHANGE needs two different targets and is unreachable until F05
+					# adds Toxin, so there is nothing here to run yet.
+
+	for compartment in range(racks.size()):
+		for occupant in racks[compartment].occupants():
+			if not occupant.acts_on_tick(tick):
+				continue
+			for function in occupant.product.resolved.functions:
+				if function.kind == ProteinFunction.Kind.CATABOLISE:
+					_catabolise(occupant.product, function)
+
+
+## An importer with nothing to import costs nothing. That is deliberate: charging for a
+## move that did not happen is exactly how §10's "importer becomes a trap block" risk
+## would materialise, since a full membrane rack in a scarce medium would bleed the pool
+## dry for no return.
+func _import_food() -> void:
+	if medium.food <= 0:
+		return
+	if not try_spend(Balance.TRANSPORT_COST, &"import"):
+		return
+	medium.take_food(1)
+	internal_food += 1
+	_emit(SimEvent.Type.FOOD_IMPORTED, {"in_medium": medium.food, "internal": internal_food})
+
+
+func _export_food() -> void:
+	if internal_food <= 0:
+		return
+	if not try_spend(Balance.TRANSPORT_COST, &"export"):
+		return
+	internal_food -= 1
+	medium.add_food(1)
+	_emit(SimEvent.Type.FOOD_EXPORTED, {"in_medium": medium.food, "internal": internal_food})
+
+
+## Catabolism is free on food and yields the environment's tier value (§2.2, §7.3).
+##
+## Where the enzyme sits decides what it eats. An enzyme on the extracellular side of a
+## membrane protein destroys food in the medium and yields nothing to anybody — the
+## metabolites are outside the cell and lost. That is §8's denial elite, "a cell
+## secreting a catabolic enzyme that destroys extracellular food", falling out of the
+## topology rather than needing a special block. Turning medium polymer into medium
+## sugar instead is §7.3's pre-digestion and arrives with F06.
+func _catabolise(product: GeneProduct, function: ProteinFunction) -> void:
+	var resolved := product.resolved
+	var outside := resolved.membrane_index >= 0 and function.effector_index > resolved.membrane_index
+
+	if outside:
+		if medium.food <= 0:
+			return
+		medium.take_food(1)
+		_emit(SimEvent.Type.FOOD_DESTROYED, {"in_medium": medium.food})
+		return
+
+	if internal_food <= 0:
+		return
+	internal_food -= 1
+	var yielded := environment.food_yield if environment != null else 0
+	_emit(SimEvent.Type.FOOD_CATABOLISED, {"yield": yielded, "internal": internal_food})
+	produce(yielded)
+
+
 func _occupy_slot(product: GeneProduct) -> void:
 	var target := racks[product.resolved.compartment]
 	var was_full := target.is_full()
-	var evicted := target.insert(product)
+	var evicted := target.insert(product, tick)
 
 	_emit(SimEvent.Type.PROTEIN_BUILT, {
 		"promoter": product.source_promoter_index,
@@ -206,7 +352,7 @@ func _occupy_slot(product: GeneProduct) -> void:
 	})
 	if evicted != null:
 		_emit(SimEvent.Type.PROTEIN_EVICTED, {
-			"evicted_promoter": evicted.source_promoter_index,
+			"evicted_promoter": evicted.product.source_promoter_index,
 			"evicted_by_promoter": product.source_promoter_index,
 			"compartment": product.resolved.compartment,
 		})

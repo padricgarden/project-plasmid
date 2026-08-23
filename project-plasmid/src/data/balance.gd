@@ -58,3 +58,54 @@ const BLOCKS_PER_SYNTHESIS_UNIT := 3
 ## genes — §4's stated cost for omitting a terminator — without making an emergency
 ## efflux gene so sluggish that TF gating stops paying for itself (§3.2).
 const BUILD_TICKS_PER_BLOCK := 1
+
+
+## Ticks between actions for a resident effector. Spec §2.2, §2.3, §2.4.
+##
+## §2.2 attaches a 3-tick cooldown only to Catabolic+Food and gives transport none — but
+## the cooldown has to be universal for the spec's own arithmetic to work. §2.3's ceiling
+## ("eight internal slots ≈ 8 metabolites/tick gross") needs one enzyme to yield exactly
+## 1/tick, which is 3 metabolites every 3 ticks. §2.4's baseline needs one importer to
+## cost 0.33/tick, which is 1 food every 3 ticks. Both land only at a shared cadence of 3.
+const EFFECTOR_COOLDOWN_TICKS := 3
+
+
+## Metabolites to move one unit of one target across the membrane. Spec §2.2.
+const TRANSPORT_COST := 1
+
+
+## Rates are stored as integers per this many ticks, so the economy never touches a
+## float. §7.4's delivery rates become 150 / 75 / 40 rather than 1.5 / 0.75 / 0.4.
+const RATE_SCALE := 100
+
+
+## Buffer on top of one full round of synthesis, endowed to a cell at the start of a
+## battle. [b]The spec does not mention any endowment, and without one the game cannot
+## start at all.[/b]
+##
+## At tick 0 the pool is empty, so no promoter can pay for synthesis; with no proteins
+## nothing imports or catabolises, so the pool stays empty and the cell deadlocks
+## permanently. Measured at F01-M05: a starting cell with no endowment stalls 68 times
+## in 400 ticks and never racks a single protein.
+##
+## Scaled to the genome rather than fixed. A flat endowment large enough for a starting
+## cell leaves a six-gene plasmid unable to fund its first import: its transcripts cost
+## exactly the endowment, the importers then stall, and the cell deadlocks with a full
+## medium in front of it. Measured at F01-M05. Since drafting only grows the plasmid
+## (§8), a flat value would make soft-locks more likely as a run goes on.
+##
+## This is an endowment, not free growth — it enters the pool at age 0 and banks only if
+## the cell fails to spend it (§2.1), so a fast starter converts none of it.
+const STARTING_METABOLITE_BUFFER := 4
+
+
+## §4.1's burden curve: `target = BASE + c × (B^exp − B_start^exp)`, normalised so a
+## starting genome sits at exactly BASE.
+##
+## The spec flags its own `c` as probably too weak and states a preference for letting
+## food scarcity do the limiting instead (§7.4). Measured at F01-M05 rather than assumed;
+## see docs/balance.md.
+const BASE_GROWTH_TARGET := 100
+const BURDEN_COEFFICIENT := 1.5
+const BURDEN_EXPONENT := 1.1
+const STARTING_BLOCK_COUNT := 12

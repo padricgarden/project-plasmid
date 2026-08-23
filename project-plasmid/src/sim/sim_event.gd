@@ -20,6 +20,17 @@ enum Type {
 	## FIFO eviction. Always visible and always logged in plain language (§3.4) — a
 	## protein vanishing silently is the most confusing thing this game can do.
 	PROTEIN_EVICTED,
+	## The environment dripped food into the shared medium (§7.4).
+	FOOD_DELIVERED,
+	## A membrane transporter moved food inward, paying the workhorse tax (§2.2).
+	FOOD_IMPORTED,
+	## ...or outward.
+	FOOD_EXPORTED,
+	## An internal enzyme destroyed a unit of food and yielded metabolites (§2.2).
+	FOOD_CATABOLISED,
+	## An extracellular enzyme destroyed food in the medium. Pure denial: the metabolites
+	## are outside the cell and lost to everyone (§8).
+	FOOD_DESTROYED,
 }
 
 ## What happened.

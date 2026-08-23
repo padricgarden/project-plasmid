@@ -84,7 +84,7 @@ ticks and asserts the rack holds **6 A : 2 B**, stable and non-oscillating, acro
 final 50. This is the most important test in the project; §3.1 is the design's most
 unusual property and this is the only thing that will notice if a refactor breaks it.
 
-### F01-M05 — Medium, food, and the growth pipeline
+### F01-M05 — Medium, food, and the growth pipeline ✅
 
 Food delivery rate as a first-class per-environment parameter (§7.4), simple vs. polymer
 tiers (§7.3), import and catabolism, growth accumulation, and the plasmid burden target
@@ -192,3 +192,30 @@ common base, and the register explains why extending the set breaks it.
   itself neutered by the economy: the subsidy covered only the fast gene's synthesis, so
   the slow gene stalled on tick 0 (§2.5) and the fill order reverted to 6:2. There is now
   a guard asserting no gene ever stalls during that case.
+- `2026-08-23` — **M05 done**, and it is the milestone that made the spec answer for
+  itself. §4.1's burden curve reproduces its published table exactly (12→100, 20→117,
+  30→140, 45→176, 60→212). Three other claims did not survive contact:
+- `2026-08-23` — **§2.4's baseline benchmark cannot reproduce.** It predicts ≈0.6
+  metabolites/tick and ~165 ticks for "one Catabolic+Food, one importer", but under §3's
+  slot rules a lone gene fills all eight slots of its compartment — the starting cell runs
+  *eight* enzymes and eight importers, not one of each. §2.4 predates the 5→8 slot change
+  in §3.4 and its arithmetic was never revisited. Measured over 400 ticks: 2.81/tick
+  abundant, 1.33/tick knife-edge, 0.63/tick scarce. The 0.6 figure does still appear, at
+  scarce density — but as a property of the environment, not of the cell.
+- `2026-08-23` — **§4.1's worry about `c = 1.5` is real but does not matter.** Burden does
+  not restrain engine-building; §3.2's churn does, and hard. Throughput is food-limited,
+  so extra genes buy no yield — a 27-block six-gene engine eats the *same* food as the
+  9-block starting cell, pays over 5× the synthesis upkeep and banks less than half the growth. At
+  scarce density it never divides at all: upkeep drains the pool, transport becomes
+  unaffordable, and it starves beside food it cannot pay to import. The spec's preference
+  for keeping balance in the environment is validated; leave `c` alone.
+- `2026-08-23` — **Two rules had to be invented because the spec omits them.** The 3-tick
+  cooldown is applied to *every* effector, not just catabolism, because §2.3's ceiling and
+  §2.4's import cost only come out right that way. And a cell is endowed with one round of
+  synthesis plus a buffer at battle start — without it the pool is empty, no promoter can
+  pay for its first transcript, and the cell deadlocks permanently. Both are registered in
+  docs/balance.md with their reasoning, and both want a spec decision.
+- `2026-08-23` — §8's denial elite falls out of topology rather than needing a block: an
+  enzyme on the extracellular side of a membrane protein destroys medium food and yields
+  nothing to anyone. Yielding metabolites there instead would have been free food with no
+  transport tax, strictly better than importing.

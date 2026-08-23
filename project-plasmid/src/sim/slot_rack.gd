@@ -17,9 +17,9 @@ extends RefCounted
 
 var capacity: int
 
-## Oldest first. Shares [GeneProduct] references rather than copying them — products are
-## immutable once compiled.
-var _occupants: Array[GeneProduct] = []
+## Oldest first. Each entry is one copy, carrying the per-copy state (when it was racked,
+## and therefore when it next acts) that a shared [GeneProduct] cannot hold.
+var _occupants: Array[SlotOccupant] = []
 
 
 func _init(p_capacity: int) -> void:
@@ -30,8 +30,8 @@ func _init(p_capacity: int) -> void:
 ##
 ## Note that a full rack still accepts the insertion and pays for it. A promoter firing
 ## into a full rack is meant to be a visible waste of money, not a silent no-op (§2.3).
-func insert(product: GeneProduct) -> GeneProduct:
-	_occupants.append(product)
+func insert(product: GeneProduct, tick: int) -> SlotOccupant:
+	_occupants.append(SlotOccupant.new(product, tick))
 	if _occupants.size() <= capacity:
 		return null
 	return _occupants.pop_front()
@@ -46,7 +46,7 @@ func is_full() -> bool:
 
 
 ## Oldest first.
-func occupants() -> Array[GeneProduct]:
+func occupants() -> Array[SlotOccupant]:
 	return _occupants.duplicate()
 
 
@@ -54,13 +54,14 @@ func occupants() -> Array[GeneProduct]:
 ## the equilibrium §3.1 predicts and the rack §9.2 wants drawn.
 func composition() -> Dictionary:
 	var counts := {}
-	for product in _occupants:
-		var key := product.source_promoter_index
+	for occupant in _occupants:
+		var key := occupant.product.source_promoter_index
 		counts[key] = counts.get(key, 0) + 1
 	return counts
 
 
 func clone() -> SlotRack:
 	var copy := SlotRack.new(capacity)
-	copy._occupants = _occupants.duplicate()
+	for occupant in _occupants:
+		copy._occupants.append(occupant.clone())
 	return copy
