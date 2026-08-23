@@ -1,6 +1,6 @@
 # F01: Simulation Core
 
-**Status:** planned
+**Status:** in progress
 **Spec sections:** §2, §3, §4, §5, §7.0, §7.3, §7.4
 **Depends on:** nothing
 
@@ -40,7 +40,7 @@ drift.
 
 ## Milestones
 
-### F01-M01 — Metabolite economy and the tick loop
+### F01-M01 — Metabolite economy and the tick loop ✅
 
 The immature pool with per-unit age counters, maturation to banked growth at age 5,
 youngest-first spending, banked growth immutable (§2.1). Defines the `SimEvent` record
@@ -119,11 +119,22 @@ common base, and the register explains why extending the set breaks it.
 
 ## Open questions
 
-- **Tick resolution order.** Not yet decided. Whether synthesis resolves before or after
-  transport within a tick will shift the baseline benchmark slightly.
+- **Tick resolution order.** Partly settled — ageing is last, recorded at the top of
+  `SimState.step()`. Still open: whether synthesis resolves before or after transport,
+  which shifts the §2.4 baseline slightly. Decide at M05, when both exist to order.
 - **Passive diffusion** (§10) — near-zero, or inversely scaling with concentration? Left
   out of M05 entirely until there is a reason to add it.
 
 ## Changelog
 
 - `2026-08-23` — Created. Scoped to the Prototype 1 block set.
+- `2026-08-23` — **M01 done.** `MetabolitePool` stores counts bucketed by age rather than
+  one entry per metabolite, so ageing is a shift and a clone is O(MATURATION_AGE) — which
+  F03-M01's sandbox needs, since it copies the world on every edit. The pool holds no
+  reference to banked growth, making §2.1's "banked growth is safe" structural rather than
+  a rule: maturation reports a count and `SimState` banks it. Spending is all-or-nothing,
+  which is what makes the §2.5 death spiral a stall rather than a debt; partial fulfilment
+  is left to callers as a per-action decision.
+- `2026-08-23` — Tick resolution order opened at the top of `SimState.step()` with ageing
+  last, so a metabolite produced during a tick banks exactly MATURATION_AGE ticks later.
+  Steps 1 and 2 are placeholders for M04 and M05.

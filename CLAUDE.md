@@ -60,8 +60,24 @@ Raw equivalents, if you need to vary the flags:
 .\Godot\Godot_v4.7.2-stable_win64_console.exe --headless --path project-plasmid --check-only --script res://src/sim/some_file.gd
 ```
 
+⚠ **`class_name` types do not resolve under `--headless --script`.** Godot resolves them
+through `.godot/global_script_class_cache.cfg`, and a `--script` run does not scan the
+filesystem to build it — so a new or renamed class fails with *"Could not find type X in
+the current scope"* until something rebuilds the cache. A headless editor pass does it in
+about two seconds:
+
+```powershell
+.\Godot\Godot_v4.7.2-stable_win64_console.exe --headless --editor --quit --path project-plasmid
+```
+
+`scripts\test.ps1` runs this automatically whenever a `.gd` file is newer than the cache,
+so normally you never think about it. `-Rescan` forces it.
+
 Godot should not be open in the editor while a script writes `.tscn` or `.tres` files —
-the editor can overwrite them when it regains focus. Ask the user to close it first.
+the editor can overwrite them when it regains focus. Ask the user to close it first. An
+open editor can also deadlock a concurrent headless run mid-scan; if a headless Godot
+hangs, check for an editor process before assuming the test suite is at fault, and kill
+only your own process.
 
 ## Testing
 

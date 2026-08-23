@@ -31,8 +31,8 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Maturation age | 5 ticks | §2.1 | pending F01-M01 | Primary tension knob, paired with shock frequency (§7.5). |
-| Spend order | youngest-first | §2.1 | pending F01-M01 | Policy, not a number. Do not make it configurable. |
+| Maturation age | 5 ticks | §2.1 | `Balance.MATURATION_AGE` | Primary tension knob, paired with shock frequency (§7.5). |
+| Spend order | youngest-first | §2.1 | `MetabolitePool.try_spend()` | Policy, not a number. Do not make it configurable. |
 | Catabolic on food — yield | 3 per unit | §2.2 | pending F01-M05 | Base yield. Tier yields in §7.3 are multiples of it. |
 | Catabolic on food — cooldown | 3 ticks | §2.2 | pending F01-M05 | |
 | Transport cost | 1 per unit | §2.2 | pending F01-M05 | "The workhorse tax." |

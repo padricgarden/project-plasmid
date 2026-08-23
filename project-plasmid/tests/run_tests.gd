@@ -30,6 +30,8 @@ func _init() -> void:
 			_failures.append("%s: failed to load" % path)
 			continue
 		var suite: Object = script.new()
+		if suite.has_method("set_runner"):
+			suite.call("set_runner", self)
 		if suite.has_method("before_all"):
 			suite.call("before_all")
 		for method in script.get_script_method_list():
@@ -39,8 +41,6 @@ func _init() -> void:
 			_current = "%s::%s" % [path.get_file(), name]
 			if suite.has_method("before_each"):
 				suite.call("before_each")
-			if suite.has_method("set_runner"):
-				suite.call("set_runner", self)
 			suite.call(name)
 			if suite.has_method("after_each"):
 				suite.call("after_each")
