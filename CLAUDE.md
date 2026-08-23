@@ -17,13 +17,13 @@ counter-intuitive. When code and spec disagree, that is a bug in one of them; sa
 project-plasmid/          <- repo root
 ├── CLAUDE.md
 ├── docs/
-│   ├── design-spec.md    <- the design spec (v0.3)
+│   ├── design-spec.md    <- the design spec (v0.3.1)
 │   ├── balance.md        <- register of every tunable; see "Balance parameters"
 │   └── features/         <- one F##_Name.md per major feature; see "Feature docs"
 │       ├── README.md     <- the number register — check it before allocating F##
 │       └── _TEMPLATE.md
 ├── Godot/                <- vendored Godot 4.7.2 editor (git-ignored, not in the repo)
-├── scripts/              <- PowerShell helpers (test.ps1, editor.ps1)
+├── scripts/              <- PowerShell helpers (test, editor, run, screenshot)
 └── project-plasmid/      <- THE GODOT PROJECT (project.godot lives here)
     ├── assets/           <- art / fonts / audio
     ├── src/              <- all game code; see src/README.md for the dependency rules
@@ -33,7 +33,8 @@ project-plasmid/          <- repo root
     │   ├── battle/       <- battle presentation, clock, speed controls
     │   ├── run/          <- acts, drafting, events, opponent roster
     │   └── autoload/     <- singletons (keep this list short)
-    └── tests/            <- headless test suite + runner
+    ├── tests/            <- headless test suite + runner
+    └── tools/            <- dev tools (screenshot.gd); not shipped
 ```
 
 Note the doubled name: the Godot project is the **inner** `project-plasmid/` directory.
@@ -94,7 +95,14 @@ only your own process.
 gets the runner injected via `set_runner()` and asserts with `check()` / `check_eq()`.
 Optional `before_all` / `before_each` / `after_each` / `after_all` hooks are honoured.
 
-`tests/test_smoke.gd` is a placeholder — delete it once `sim/` has real coverage.
+A GDScript runtime error inside a test aborts that test [i]without[/i] failing it, so a
+suite can report "0 failures" while a test silently did almost nothing. `test.ps1`
+therefore fails the run if any `SCRIPT ERROR` appears in the output — do not remove that
+check.
+
+Scene-level tests add Controls to `runner.root`. The runner deliberately runs on the
+first `_process` frame rather than in `_init` or `_initialize`, because the tree root is
+not inside the tree during either of those and `_ready()` never fires.
 
 **The simulation core must be tested headlessly.** It is deterministic by design, so
 every economic claim in the spec (§2.4 baseline ≈ 0.6 metabolites/tick, §3.1 slot-share
@@ -155,11 +163,14 @@ one environment, slots, ticks, a growth bar. The question it answers is whether
 arranging blocks to raise metabolites/tick is fun on its own. Do not build the run
 layer, drafting, or the second cell until that question has an answer.
 
-Current status: **F01 (Simulation Core) is complete** — plasmid, transcription, adjacency
-resolution, slot racks, the metabolite economy, the medium, and battle resolution, all
-headless and deterministic. 95 tests. Nothing is rendered yet; the next work is F02
-(plasmid editor) and F03 (legibility layer), which together with F04 reach Prototype 1's
-gate. See [docs/features/README.md](docs/features/README.md) for the register.
+Current status: **Prototype 1 is built and playable.** F01 (simulation core), F02 (plasmid
+editor), F03 (legibility layer) and F04-M01 to M04 (watch phase) are done — `.scriptsun.ps1`
+opens the build phase, and committing plays the battle out. 201 tests.
+
+**The next step is not code.** F04-M05 is spec §11's first gate: *is arranging blocks to
+raise metabolites/tick fun on its own?* It is answered by playing the game and watching
+other people play it, and until it has an answer, F05 should not start — the spec is
+explicit that no amount of roguelike scaffolding saves a core loop that is not fun.
 
 Three findings from F01 are worth knowing before touching the economy — §2.4's baseline
 benchmark cannot reproduce under 8-slot rules, plasmid burden is not what restrains

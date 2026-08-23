@@ -99,6 +99,14 @@ const RATE_SCALE := 100
 const STARTING_METABOLITE_BUFFER := 4
 
 
+## Real seconds per tick at 1x speed. Spec §7.0 — 120 ticks at 0.5 s is about a minute of
+## watching.
+##
+## [b]Presentation only.[/b] Speed controls change how fast ticks are consumed, never what
+## a tick does, so this number can be anything without altering a single outcome.
+const TICK_SECONDS := 0.5
+
+
 ## Ticks a battle runs before the clock decides it. Spec §7.0 — 120 ticks at 0.5 s each,
 ## roughly a minute of watching.
 ##

@@ -225,37 +225,26 @@ func test_an_unviable_plasmid_cannot_be_committed() -> void:
 	runner.check(not editor.is_committed, "an unviable plasmid was committed anyway")
 
 
-func test_committing_reports_the_outcome() -> void:
+func test_committing_hands_off_rather_than_resolving_the_battle_itself() -> void:
+	# F04 owns the watch phase. Two places resolving battles would be two places to keep
+	# agreeing about what a battle is, so the editor announces and stops.
 	var editor := _editor()
 	editor._on_commit_pressed()
 	runner.check(
-		editor._outcome_label.text.to_lower().contains("divided"),
-		"no outcome was reported: '%s'" % editor._outcome_label.text
-	)
-	runner.check(
-		editor._outcome_label.text.contains("growth"),
-		"the outcome does not say how much growth: '%s'" % editor._outcome_label.text
+		editor._outcome_label.text.to_lower().contains("watching"),
+		"the editor should hand off, not report a result: '%s'" % editor._outcome_label.text
 	)
 
 
-func test_the_environment_choice_changes_the_result() -> void:
-	# §7.4's densities, reachable from the screen. The same build should divide in
-	# abundant food and run out of clock in scarce.
-	var rich := _editor()
-	rich._on_environment_selected(0)
-	rich._on_commit_pressed()
-	runner.check(
-		rich._outcome_label.text.to_lower().contains("divided"),
-		"the starting cell failed in abundant food: '%s'" % rich._outcome_label.text
-	)
+func test_the_environment_choice_is_handed_to_the_battle() -> void:
+	# §7.4's densities, reachable from the screen and carried through to what runs.
+	var editor := _editor()
+	var handed: Array[EnvironmentDef] = []
+	editor.committed.connect(func(_p: Plasmid, env: EnvironmentDef) -> void: handed.append(env))
 
-	var poor := _editor()
-	poor._on_environment_selected(2)
-	poor._on_commit_pressed()
-	runner.check(
-		poor._outcome_label.text.to_lower().contains("ran out of time"),
-		"the starting cell survived scarce food: '%s'" % poor._outcome_label.text
-	)
+	editor._on_environment_selected(2)
+	editor._on_commit_pressed()
+	runner.check_eq(handed[0].display_name, "Scarce", "the chosen environment was not passed on")
 
 
 func test_going_back_to_editing_unlocks_the_ring() -> void:

@@ -397,11 +397,10 @@ func _on_commit_pressed() -> void:
 	is_committed = true
 	_ring.set_editable(false)
 
-	var plasmid := draft.to_plasmid()
-	committed.emit(plasmid, environment)
-
-	var outcome := Battle.new(plasmid, environment).run()
-	_outcome_label.text = _describe_outcome(outcome)
+	# The editor announces and stops. Running the battle is F04's job — two places
+	# resolving battles would be two places to keep agreeing about what a battle is.
+	committed.emit(draft.to_plasmid(), environment)
+	_outcome_label.text = "Committed. Watching the battle…"
 	_refresh()
 
 
@@ -411,21 +410,3 @@ func _on_edit_pressed() -> void:
 	_outcome_label.text = ""
 	_refresh()
 
-
-func _describe_outcome(outcome: BattleOutcome) -> String:
-	var headline := ""
-	match outcome.kind:
-		BattleOutcome.Kind.DIVIDED:
-			headline = "Divided on tick %d." % outcome.ended_at_tick
-		BattleOutcome.Kind.LYSED:
-			headline = "Lysed on tick %d." % outcome.ended_at_tick
-		_:
-			headline = "Ran out of time on tick %d." % outcome.ended_at_tick
-
-	return "%s\n%d of %d growth (%d%%), in %s." % [
-		headline,
-		outcome.banked_growth,
-		outcome.growth_target,
-		outcome.progress_percent(),
-		environment.display_name,
-	]

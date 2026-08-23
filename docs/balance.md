@@ -117,8 +117,8 @@ buys and was amended to 4:3:1 in spec v0.3.1 for this reason.
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
 | Battle length | 120 ticks | §7.0 | `Balance.BATTLE_LENGTH_TICKS` | At knife-edge one cell divides ~tick 73, so two splitting the medium both fall short. |
-| Tick duration | 0.5 s | §7.0 | pending F04-M02 | Presentation only — never affects sim outcome. |
-| Speed multipliers | 1× / 2× / 4× / instant | §7.0 | pending F04-M02 | |
+| Tick duration | 0.5 s | §7.0 | `Balance.TICK_SECONDS` | Presentation only — never affects sim outcome, asserted by test. |
+| Speed multipliers | 1× / 2× / 4× / instant | §7.0 | `BattleClock.MULTIPLIERS` | Plus paused. All reach identical outcomes and logs. |
 | Lysis toxin threshold | ? | §1 | pending F05-M01 | |
 | Lysis consecutive ticks | ? | §1 | pending F05-M01 | |
 

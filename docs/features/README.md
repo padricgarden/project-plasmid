@@ -11,7 +11,7 @@ Status: `planned` · `in progress` · `done` · `cut`
 | F01 | Simulation Core | [F01_Simulation-Core.md](F01_Simulation-Core.md) | done | Deterministic tick engine. Prototype 1 block set only. |
 | F02 | Plasmid Editor | [F02_Plasmid-Editor.md](F02_Plasmid-Editor.md) | done | The build phase — the game's only decision surface. |
 | F03 | Legibility Layer | [F03_Legibility-Layer.md](F03_Legibility-Layer.md) | done | Spec §9, non-negotiable. Ships with F02, not after. |
-| F04 | Battle Presentation | [F04_Battle-Presentation.md](F04_Battle-Presentation.md) | planned | Completes Prototype 1. **Gate: F04-M05.** |
+| F04 | Battle Presentation | [F04_Battle-Presentation.md](F04_Battle-Presentation.md) | in progress | Completes Prototype 1. **Gate: F04-M05.** |
 | F05 | Regulation and Toxin | [F05_Regulation-And-Toxin.md](F05_Regulation-And-Toxin.md) | planned | Prototype 2. Sketch only. **Gate: F05-M06.** |
 | F06 | Opponent and Shared Medium | [F06_Opponent-And-Shared-Medium.md](F06_Opponent-And-Shared-Medium.md) | planned | Prototype 3. Sketch only. **Gate: F06-M04.** |
 | F07 | Run Layer | [F07_Run-Layer.md](F07_Run-Layer.md) | planned | Acts, drafting, environments. Sketch only. |

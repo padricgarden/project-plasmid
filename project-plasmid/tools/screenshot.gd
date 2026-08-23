@@ -12,10 +12,11 @@ extends SceneTree
 var _target: Node
 var _frames := 0
 
-var _scene_path := "res://src/ui/plasmid_editor.tscn"
+var _scene_path := "res://src/main.tscn"
 var _out_path := "screenshot.png"
 var _select := -1
 var _tab := -1
+var _ticks := 0
 ## Drive the screen into its committed state before capturing, so the post-commit layout
 ## can be looked at too.
 var _commit := false
@@ -38,12 +39,14 @@ func _process(_delta: float) -> bool:
 
 	_frames += 1
 	if _frames == _settle_frames / 2:
-		if _select >= 0 and _target.has_method("select_block"):
-			_target.select_block(_select)
-		if _commit and _target.has_method("_on_commit_pressed"):
-			_target._on_commit_pressed()
+		if _select >= 0:
+			_invoke(_target, "select_block", _select)
+		if _commit:
+			_invoke(_target, "_on_commit_pressed")
 		if _tab >= 0:
 			_select_tab(_target)
+		if _ticks > 0:
+			_invoke(_target, "_consume", _ticks)
 
 	if _frames < _settle_frames:
 		return false
@@ -74,6 +77,8 @@ func _read_arguments() -> void:
 				_commit = parts[1] == "true"
 			"--tab":
 				_tab = int(parts[1])
+			"--ticks":
+				_ticks = int(parts[1])
 
 
 ## Switch the first TabContainer found to a given tab, so each readout can be captured.
@@ -83,3 +88,19 @@ func _select_tab(node: Node) -> void:
 		return
 	for child in node.get_children():
 		_select_tab(child)
+
+
+## Call a method on the first node in the tree that has it. The scene under test is a
+## shell now, so the thing worth driving is usually a screen inside it rather than the
+## root.
+func _invoke(node: Node, method: String, argument: Variant = null) -> bool:
+	if node.has_method(method):
+		if argument == null:
+			node.call(method)
+		else:
+			node.call(method, argument)
+		return true
+	for child in node.get_children():
+		if _invoke(child, method, argument):
+			return true
+	return false
