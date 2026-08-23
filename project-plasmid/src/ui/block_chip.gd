@@ -17,6 +17,10 @@ var block: Block
 var index: int = -1
 var selected: bool = false
 
+## Committed plasmids cannot be edited (§7.0 — the build phase is the whole decision),
+## so a chip stops being draggable rather than silently dropping the reorder later.
+var editable: bool = true
+
 
 func _init() -> void:
 	custom_minimum_size = CHIP_SIZE
@@ -68,6 +72,8 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
+	if not editable:
+		return null
 	picked.emit(index)
 
 	var preview := BlockChip.new()
@@ -79,7 +85,7 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	return data is Dictionary and data.has("plasmid_block_index")
+	return editable and data is Dictionary and data.has("plasmid_block_index")
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:

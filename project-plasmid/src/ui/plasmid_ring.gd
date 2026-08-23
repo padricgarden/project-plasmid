@@ -19,6 +19,10 @@ const WRAP_MARK := Color("7d8b99")
 var draft: PlasmidDraft
 var selected_index: int = -1
 
+## Cleared once the plasmid is committed, so the ring can still be inspected but not
+## rearranged (§7.0).
+var editable: bool = true
+
 var _chips: Array[BlockChip] = []
 
 
@@ -40,6 +44,12 @@ func bind(p_draft: PlasmidDraft) -> void:
 	rebuild()
 
 
+func set_editable(value: bool) -> void:
+	editable = value
+	for chip in _chips:
+		chip.editable = value
+
+
 func select(index: int) -> void:
 	selected_index = index
 	for chip in _chips:
@@ -59,6 +69,7 @@ func rebuild() -> void:
 			var chip := BlockChip.new()
 			add_child(chip)
 			chip.setup(draft.at(i), i, i == selected_index)
+			chip.editable = editable
 			chip.picked.connect(_on_chip_picked)
 			chip.reorder_requested.connect(_on_reorder_requested)
 			_chips.append(chip)

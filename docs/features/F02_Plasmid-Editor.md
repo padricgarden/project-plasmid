@@ -1,6 +1,6 @@
 # F02: Plasmid Editor
 
-**Status:** in progress
+**Status:** done
 **Spec sections:** §4, §5, §5.3, §10
 **Depends on:** F01
 
@@ -49,7 +49,7 @@ sides distinguished, directional arrows on transporters. The §10 mitigation.
 flips the transporter from import to export, and a cytoplasmic Transporter+Food is
 visibly marked as doing nothing.
 
-### F02-M03 — Block palette and plain-language function readout
+### F02-M03 — Block palette and plain-language function readout ✅
 
 The available blocks, and a sentence describing what the currently selected protein will
 actually do once resolved through §5.3.
@@ -57,7 +57,7 @@ actually do once resolved through §5.3.
 **Done when:** a player can tell whether their transporter imports or exports without
 running the sim.
 
-### F02-M04 — Commit flow
+### F02-M04 — Commit flow ✅
 
 Lock the plasmid, count blocks, show the burden-adjusted growth target (§4.1), hand off
 to the battle.
@@ -122,3 +122,32 @@ edited afterwards.
   rendering a frame and looking at it. Added `scripts/screenshot.ps1` and
   `tools/screenshot.gd` so that check is repeatable; F03 is entirely visual and will need
   it. Viewport default is now 1280×832.
+- `2026-08-23` — **M03 done.** `ProteinDescription` turns a resolved protein into
+  sentences: "Pulls food in from the medium, for 1 metabolite per unit." It *describes*
+  and does not draw — the topology preview already shows where the membrane is, and a
+  second picture painted in words would be a second thing to keep in agreement. An inert
+  protein says why and says it still costs a slot and its upkeep, because §3.2 is what
+  makes that mistake expensive rather than harmless. An extracellular enzyme is described
+  as denial, not as feeding.
+- `2026-08-23` — The palette is grouped into promoters, structure, domains and targets,
+  so §5.3's core move — aiming a domain with a target — does not look like just placing
+  another domain.
+- `2026-08-23` — **M04 done.** Committing locks the ring, snapshots the plasmid, emits
+  `committed(plasmid, environment)` for F04 to drive its watch phase from, and resolves
+  the battle instantly. The instant resolve is §7.0's own fastest speed rather than a
+  placeholder, so F04 adds the watch phase in front of it instead of replacing it.
+- `2026-08-23` — The commit bar shows block count and the burden-adjusted growth target
+  (§4.1) and nothing else. Predicted throughput is F03-M02's readout panel; building it
+  here would mean two of them.
+- `2026-08-23` — An environment picker exposes §7.4's three densities. F07 owns real
+  progression; this exists so one build can be tried against all three, which is exactly
+  the comparison Prototype 1's question needs.
+- `2026-08-23` — **Bug found by the tests: replacing the editor's draft left the old
+  `changed` signal connected**, so the screen went on listening to a plasmid nobody was
+  editing. Now `set_draft()` owns the whole swap. F07 loading a saved plasmid would have
+  hit this.
+- `2026-08-23` — **A second layout overflow, and a structural fix.** The grouped palette
+  pushed the commit bar off screen. Rather than shaving pixels, the palette now scrolls
+  inside a capped height — F05 adds seven more blocks (Toxin, Metabolite, Sensing, TF,
+  Anabolic, Anchor, Degron) and any fixed layout would break again. Found by screenshot,
+  not by test; `screenshot.ps1` gained `-Commit` so post-commit states can be checked too.

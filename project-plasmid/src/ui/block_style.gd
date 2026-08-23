@@ -76,16 +76,43 @@ static func name_for(block: Block) -> String:
 	return of(block.kind)["name"]
 
 
-## Every block the palette offers, in the order it should be shown: structure first,
-## then the domains that do work, then the targets that aim them.
+## The palette, grouped so the three kinds of block read as three different jobs:
+## punctuation that directs transcription, domains that do work, and targets that aim
+## them. §5.3 makes aiming a domain the core move, so a target must not look like just
+## another domain.
+static func palette_groups() -> Array:
+	var promoters: Array[Block] = []
+	for period in Balance.PROMOTER_PERIODS:
+		promoters.append(Block.new(Block.Kind.PROMOTER, period))
+
+	return [
+		{
+			"name": "Promoters — slower is cheaper, faster holds more slots",
+			"blocks": promoters,
+		},
+		{
+			"name": "Structure — where genes start and stop",
+			"blocks": [Block.new(Block.Kind.TERMINATOR), Block.new(Block.Kind.RBS)],
+		},
+		{
+			"name": "Domains — the parts that do work",
+			"blocks": [
+				Block.new(Block.Kind.MEMBRANE_DOMAIN),
+				Block.new(Block.Kind.TRANSPORTER_DOMAIN),
+				Block.new(Block.Kind.CATABOLIC_ENZYME),
+			],
+		},
+		{
+			"name": "Targets — aim the domains on both sides",
+			"blocks": [Block.new(Block.Kind.FOOD)],
+		},
+	]
+
+
+## Every block the palette offers, flattened.
 static func palette() -> Array[Block]:
 	var offered: Array[Block] = []
-	for period in Balance.PROMOTER_PERIODS:
-		offered.append(Block.new(Block.Kind.PROMOTER, period))
-	offered.append(Block.new(Block.Kind.TERMINATOR))
-	offered.append(Block.new(Block.Kind.RBS))
-	offered.append(Block.new(Block.Kind.MEMBRANE_DOMAIN))
-	offered.append(Block.new(Block.Kind.TRANSPORTER_DOMAIN))
-	offered.append(Block.new(Block.Kind.CATABOLIC_ENZYME))
-	offered.append(Block.new(Block.Kind.FOOD))
+	for group in palette_groups():
+		for block in group["blocks"]:
+			offered.append(block)
 	return offered

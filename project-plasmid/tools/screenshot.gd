@@ -15,6 +15,9 @@ var _frames := 0
 var _scene_path := "res://src/ui/plasmid_editor.tscn"
 var _out_path := "screenshot.png"
 var _select := -1
+## Drive the screen into its committed state before capturing, so the post-commit layout
+## can be looked at too.
+var _commit := false
 ## Frames to wait before capturing. Containers need a few passes to settle their layout,
 ## so capturing immediately gives a picture of a half-arranged screen.
 var _settle_frames := 30
@@ -33,8 +36,11 @@ func _process(_delta: float) -> bool:
 		return false
 
 	_frames += 1
-	if _frames == _settle_frames / 2 and _select >= 0 and _target.has_method("select_block"):
-		_target.select_block(_select)
+	if _frames == _settle_frames / 2:
+		if _select >= 0 and _target.has_method("select_block"):
+			_target.select_block(_select)
+		if _commit and _target.has_method("_on_commit_pressed"):
+			_target._on_commit_pressed()
 
 	if _frames < _settle_frames:
 		return false
@@ -61,3 +67,5 @@ func _read_arguments() -> void:
 				_out_path = parts[1]
 			"--select":
 				_select = int(parts[1])
+			"--commit":
+				_commit = parts[1] == "true"
