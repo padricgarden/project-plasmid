@@ -11,12 +11,14 @@ config_version=5
 [application]
 
 config/name="Project Plasmid"
+run/main_scene="res://src/ui/plasmid_editor.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
-run/main_scene="res://src/ui/plasmid_editor.tscn"
 
 [display]
 
+window/size/viewport_width=1280
+window/size/viewport_height=832
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

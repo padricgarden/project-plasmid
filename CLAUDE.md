@@ -51,7 +51,15 @@ godotengine.org and dropped in `Godot/`.
 ```powershell
 .\scripts\editor.ps1     # open the project in the editor
 .\scripts\test.ps1       # run the headless test suite
+.\scripts\run.ps1        # launch the game (-Seconds N to run and exit)
+.\scripts\screenshot.ps1 -Out shot.png [-Select 5]   # render a frame to a PNG
 ```
+
+**Look at UI work, don't just assert about it.** Headless tests can check what a widget
+knows and never what it shows; `screenshot.ps1` renders a real frame so a layout can be
+inspected. It caught a screen that overflowed the default viewport and hid the palette
+entirely — nothing in the suite was going to notice. It needs a real window, so it does
+not run under `--headless`.
 
 Raw equivalents, if you need to vary the flags:
 

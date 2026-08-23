@@ -40,7 +40,7 @@ The circular plasmid drawn with its blocks in order; insert, remove, and drag-to
 **Done when:** the §5.4 starting protein can be built by hand and the resulting plasmid is
 accepted and run by F01 with no hand-editing.
 
-### F02-M02 — Topology preview
+### F02-M02 — Topology preview ✅
 
 The membrane drawn across the protein under construction, cytoplasmic and extracellular
 sides distinguished, directional arrows on transporters. The §10 mitigation.
@@ -67,10 +67,11 @@ edited afterwards.
 
 ## Open questions
 
-- Does the ring stay fixed with blocks placed onto it, or does the player rotate the ring?
-  Affects how obvious wrapping is.
-- How much of the §5.3 resolution is shown inline versus in F03's readout panel — there is
-  a real risk of building the same explanation twice in two places.
+- ~~Does the ring rotate, or stay fixed?~~ Fixed, with index 0 pinned to the top and the
+  wrap point marked, so the place where the last gene reads into the first never moves.
+- How much of the §5.3 resolution is shown inline versus in F03's readout panel — still
+  a real risk of building the same explanation twice. M02 draws topology; M03 should
+  describe function in words and not re-draw it.
 
 ## Changelog
 
@@ -97,3 +98,27 @@ edited afterwards.
 - `2026-08-23` — Placing a block inserts *after* the current selection rather than
   appending, so a plasmid is built left to right instead of every block needing a drag.
   Selection travels with a dragged block for the same reason.
+- `2026-08-23` — **M02 done.** The selected protein is drawn flat with the membrane
+  across it, the two sides shaded as places rather than described as a rule, and an arrow
+  through the membrane pointing the way things actually move. §10 names this widget as
+  the one mitigation for the unified transporter, right before "do not split the block" —
+  so it is the thing standing between that design decision and an illegible game.
+- `2026-08-23` — **The preview cannot disagree with the sim, structurally.** It resolves
+  through `Adjacency`, the same call `GeneExpression.compile()` makes, so the arrow shown
+  is the behaviour that will happen. A test asserts the two agree across every membrane
+  arrangement the Prototype 1 grammar can reach.
+- `2026-08-23` — Removed a duplicated rule while wiring this up: "is this block outside
+  the membrane" existed inline in `SimState._catabolise` and was about to be written a
+  second time in the preview. It now lives once, on `ResolvedProtein.is_outside()`.
+  Verified by mutation — inverting it fails both the sim's extracellular-enzyme test and
+  the preview's side-placement test, which is the proof that they share it.
+- `2026-08-23` — `ProteinDef` gained `ring_indices`, so a protein can be traced back to
+  the blocks it came from. The alternative was re-walking §4's transcription rules inside
+  the editor, which would have put those rules in two places.
+- `2026-08-23` — Readthrough means a block can belong to *two* proteins at once (§4). The
+  preview shows the first and says so, rather than silently picking a favourite.
+- `2026-08-23` — **A layout bug no test could have caught.** The screen overflowed
+  Godot's default 1152×648 viewport and the palette was simply not on screen. Found by
+  rendering a frame and looking at it. Added `scripts/screenshot.ps1` and
+  `tools/screenshot.gd` so that check is repeatable; F03 is entirely visual and will need
+  it. Viewport default is now 1280×832.

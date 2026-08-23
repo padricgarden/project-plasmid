@@ -22,6 +22,7 @@ var _selection_label: Label
 var _problems_label: Label
 var _notation_label: Label
 var _remove_button: Button
+var _topology: TopologyPreview
 
 
 func _ready() -> void:
@@ -59,6 +60,11 @@ func _build_tree() -> void:
 	middle.add_child(_ring)
 
 	middle.add_child(_build_side_panel())
+
+	column.add_child(_heading("Topology — where this protein sits, and which way it moves things"))
+	_topology = TopologyPreview.new()
+	_topology.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_topology)
 
 	column.add_child(_heading("Palette"))
 	column.add_child(_build_palette())
@@ -128,7 +134,33 @@ func _refresh() -> void:
 	)
 
 	_update_selection_label()
+	_update_topology()
 	_remove_button.disabled = _ring.selected_index < 0 or draft.is_empty()
+
+
+## Show the protein the selected block belongs to. §10 names this preview as the one
+## mitigation for the unified transporter, so it is driven from the same resolution the
+## sim uses rather than from anything the editor works out for itself.
+func _update_topology() -> void:
+	var index := _ring.selected_index
+	if index < 0 or index >= draft.size():
+		_topology.show_nothing("Select a block to see the protein it belongs to.")
+		return
+
+	var protein := draft.protein_containing(index)
+	if protein == null:
+		_topology.show_nothing(
+			"%s is punctuation — it directs transcription but is not part of any protein."
+			% BlockStyle.name_for(draft.at(index))
+		)
+		return
+
+	var shared := draft.proteins_containing(index).size()
+	var note := ""
+	if shared > 1:
+		# Readthrough: this block is translated by more than one promoter (§4).
+		note = "This block is part of %d proteins — an upstream gene reads through into it." % shared
+	_topology.show_protein(protein, Adjacency.resolve(protein), note)
 
 
 func _update_selection_label() -> void:
@@ -165,4 +197,11 @@ func _on_remove_pressed() -> void:
 
 
 func _on_block_picked(_index: int) -> void:
+	_refresh()
+
+
+## Select a block from outside the editor. Used by the screenshot tool so a captured
+## picture can show the topology preview doing its job rather than an empty prompt.
+func select_block(index: int) -> void:
+	_ring.select(index)
 	_refresh()

@@ -101,6 +101,38 @@ func resolved_proteins() -> Array[ResolvedProtein]:
 	return resolved
 
 
+## Every protein translated from the block at [param ring_index].
+##
+## Usually one, but genuinely more than one when readthrough is in play: an unterminated
+## gene is transcribed by its own promoter *and* by the upstream one, so its blocks end
+## up in two different proteins (§4). The editor should be able to say so rather than
+## silently picking a favourite.
+func proteins_containing(ring_index: int) -> Array[ProteinDef]:
+	var found: Array[ProteinDef] = []
+	if ring_index < 0 or ring_index >= size():
+		return found
+	for transcript in transcripts():
+		for protein in transcript.proteins:
+			if protein.covers(ring_index):
+				found.append(protein)
+	return found
+
+
+## The protein to show when this block is selected, or null if the block is not part of
+## any. Selecting a promoter shows the first protein it expresses, since picking a gene's
+## promoter obviously means "show me that gene".
+func protein_containing(ring_index: int) -> ProteinDef:
+	var found := proteins_containing(ring_index)
+	if not found.is_empty():
+		return found[0]
+
+	if ring_index >= 0 and ring_index < size() and at(ring_index).kind == Block.Kind.PROMOTER:
+		for transcript in transcripts():
+			if transcript.promoter_index == ring_index and not transcript.proteins.is_empty():
+				return transcript.proteins[0]
+	return null
+
+
 ## Reasons this plasmid would not do anything useful, in plain language. Not errors —
 ## a half-built plasmid is a normal state to be in halfway through building one — but
 ## the things the commit button (M04) should refuse or warn about.

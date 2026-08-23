@@ -24,7 +24,7 @@ var _chips: Array[BlockChip] = []
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	custom_minimum_size = Vector2(380, 380)
+	custom_minimum_size = Vector2(300, 300)
 
 
 func _ready() -> void:

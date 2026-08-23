@@ -333,10 +333,7 @@ func _export_food() -> void:
 ## topology rather than needing a special block. Turning medium polymer into medium
 ## sugar instead is §7.3's pre-digestion and arrives with F06.
 func _catabolise(product: GeneProduct, function: ProteinFunction) -> void:
-	var resolved := product.resolved
-	var outside := resolved.membrane_index >= 0 and function.effector_index > resolved.membrane_index
-
-	if outside:
+	if product.resolved.is_outside(function.effector_index):
 		if medium.food <= 0:
 			return
 		medium.take_food(1)

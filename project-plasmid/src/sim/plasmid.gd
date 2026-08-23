@@ -68,9 +68,11 @@ func transcribe_from(promoter_index: int) -> Transcript:
 
 	var proteins: Array[ProteinDef] = []
 	var current: Array[Block] = []
+	var current_indices := PackedInt32Array()
 
 	for offset in range(1, blocks.size()):
-		var block := at(promoter_index + offset)
+		var ring_index := posmod(promoter_index + offset, blocks.size())
+		var block := blocks[ring_index]
 		match block.kind:
 			Block.Kind.TERMINATOR:
 				break
@@ -78,15 +80,17 @@ func transcribe_from(promoter_index: int) -> Transcript:
 				# An RBS starts a new protein inside the same transcript (§4). A leading
 				# one is a no-op rather than an empty protein.
 				if not current.is_empty():
-					proteins.append(ProteinDef.new(current.duplicate()))
+					proteins.append(ProteinDef.new(current.duplicate(), current_indices.duplicate()))
 					current.clear()
+					current_indices.clear()
 			Block.Kind.PROMOTER:
 				pass  # read through, per §4
 			_:
 				current.append(block)
+				current_indices.append(ring_index)
 
 	if not current.is_empty():
-		proteins.append(ProteinDef.new(current.duplicate()))
+		proteins.append(ProteinDef.new(current.duplicate(), current_indices.duplicate()))
 
 	return Transcript.new(promoter_index, promoter.period, proteins)
 

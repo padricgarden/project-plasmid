@@ -50,6 +50,17 @@ func is_inert() -> bool:
 	return active_functions().is_empty()
 
 
+## Whether the block at [param position] within this protein sits on the extracellular
+## side of the membrane. Spec §5.1 — blocks left of the membrane domain are cytoplasmic,
+## blocks right of it extracellular.
+##
+## The sim reads this to decide whether an enzyme eats the cell's food or the medium's,
+## and the topology preview reads it to decide which side of the membrane to draw a block
+## on. One implementation so those two can never disagree about where a block is.
+func is_outside(position: int) -> bool:
+	return membrane_index >= 0 and position > membrane_index
+
+
 func has_function(kind: ProteinFunction.Kind) -> bool:
 	for f in functions:
 		if f.kind == kind:
