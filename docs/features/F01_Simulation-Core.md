@@ -72,7 +72,7 @@ direction is read off which side the target sits on.
 asserts the resolved function of each — including the negative case, a cytoplasmic
 Transporter+Food doing nothing at all.
 
-### F01-M04 — Synthesis, slots, and FIFO eviction
+### F01-M04 — Synthesis, slots, and FIFO eviction ✅
 
 Promoters fire on their fixed period, pay `ceili(blocks / 3)`, take build time in ticks
 proportional to length, then occupy a slot and evict the oldest in that compartment.
@@ -169,3 +169,26 @@ common base, and the register explains why extending the set breaks it.
   only target in the Prototype 1 grammar, so no arrangement yields two different ones.
   The cost itself is M05's; deliberately not computed here, because §2.2 makes exchange
   free while rule 2 doubles, and those two would fight inside one multiplier.
+- `2026-08-23` — **M04 done.** §3.1's equilibrium emerges: a 4-tick and a 12-tick promoter
+  settle at 6:2 across 8 internal slots, with nothing in the sim aware that 6 and 2 are
+  the answers. Racks compete per compartment, copies of one gene each cost a slot, and
+  expressing into a full rack still charges synthesis — §2.3's intended teaching moment
+  falls out rather than being special-cased.
+- `2026-08-23` — Tick resolution order settled further: **builds finish before promoters
+  fire**, so a protein occupies its slot exactly `build_ticks` after the firing that paid
+  for it. Builds are also concurrent — every firing starts its own, even while an earlier
+  one from the same promoter is in flight. Dropping a firing because a gene was "busy"
+  would make its effective rate something other than 1/period, and §3.1 would quietly
+  stop holding for the fastest promoters.
+- `2026-08-23` — **Build time is 1 tick per block**, decided here because §3.5 says only
+  that length determines it. Registered with its reasoning in docs/balance.md.
+- `2026-08-23` — `class_name Expression` collides with Godot's built-in `Expression`;
+  renamed to `GeneExpression`. Worth remembering when naming sim types.
+- `2026-08-23` — **The headline equilibrium test was initially weaker than it looked.**
+  Under a mutation that evicted newest-first instead of oldest-first, the 4/12 rack froze
+  the instant it filled — and its fill order is *already* 6:2, so the test passed and
+  proved nothing. Added a second case whose fill order is 5:3 and which only reaches 6:2
+  through continued turnover. That one catches the mutation. A first attempt at it was
+  itself neutered by the economy: the subsidy covered only the fast gene's synthesis, so
+  the slow gene stalled on tick 0 (§2.5) and the fill order reverted to 6:2. There is now
+  a guard asserting no gene ever stalls during that case.

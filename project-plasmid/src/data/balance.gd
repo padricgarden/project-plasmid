@@ -31,3 +31,30 @@ const MATURATION_AGE := 5
 ## enforced rather than merely written down. Read docs/balance.md before adding a tier;
 ## the answer is usually to redesign around a new base, not to append one.
 const PROMOTER_PERIODS: Array[int] = [12, 6, 4, 3, 2]
+
+
+## Protein slots in each compartment. Spec §3.
+##
+## Eight rather than five: at five the only reachable splits were crude (4:1, 3:2),
+## while eight expresses 4:3:1 and 3:3:2 and gives promoter tuning enough resolution to
+## be a real skill (§3.4). Rare events expand one compartment at a time (§8), which is
+## why [SlotRack] takes its capacity as an argument instead of reading this directly.
+const SLOTS_PER_COMPARTMENT := 8
+
+
+## Blocks per metabolite of synthesis cost, rounded up. Spec §2.2 — a 3-block protein
+## costs 1, a 7-block protein costs 3.
+##
+## Synthesis is charged at all so that expression is an economic decision: a promoter
+## firing into a full rack is actively wasting money, and noticing that is the intended
+## teaching moment (§2.3).
+const BLOCKS_PER_SYNTHESIS_UNIT := 3
+
+
+## Ticks to build one block of a protein. Spec §3.5 says length determines build time
+## but gives no number; one tick per block is a decision made here.
+##
+## It keeps a fused readthrough transcript visibly slower to express than two short
+## genes — §4's stated cost for omitting a terminator — without making an emergency
+## efflux gene so sluggish that TF gating stops paying for itself (§3.2).
+const BUILD_TICKS_PER_BLOCK := 1

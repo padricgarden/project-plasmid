@@ -14,6 +14,12 @@ enum Type {
 	METABOLITE_MATURED,
 	METABOLITE_SPENT,
 	SPEND_FAILED,
+	## A finished protein took a slot. Carries whether the rack was already full, since
+	## expressing into a full rack is the intended teaching moment about waste (§2.3).
+	PROTEIN_BUILT,
+	## FIFO eviction. Always visible and always logged in plain language (§3.4) — a
+	## protein vanishing silently is the most confusing thing this game can do.
+	PROTEIN_EVICTED,
 }
 
 ## What happened.

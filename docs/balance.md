@@ -42,17 +42,18 @@ implements yet. `?` in the Value column means **the spec does not give a number*
 | Anabolic food — cost | 4 per unit | §2.2 | pending F05-M05 | Deliberately bad ROI. |
 | Sensing cost | 0 | §2.2 | pending F05-M02 | Never tax the circuit itself. |
 | TF cost | 0 | §2.2 | pending F05-M03 | Never tax the circuit itself. |
-| Protein synthesis cost | `ceili(blocks / 3)` | §2.2 | pending F01-M04 | Rounds **up**. Charged so expression is an economic decision. |
+| Protein synthesis cost | `ceili(blocks / 3)` | §2.2 | `GeneExpression.synthesis_cost()` | Rounds **up**. Charged so expression is an economic decision. |
 
 ## Slots — spec §3
 
 | Parameter | Value | Spec | Defined in | Notes |
 |---|---|---|---|---|
-| Internal slots | 8 | §3 | pending F01-M04 | |
-| Membrane slots | 8 | §3 | pending F01-M04 | The contested compartment. |
-| External slots | 8 | §3 | pending F01-M04 | |
-| Eviction policy | FIFO | §3 | pending F01-M04 | 8 chosen over 5 so ratios like 4:3:1 are expressible (§3.4). |
-| Proteins per slot | 1 | §3.4 | pending F01-M04 | No stacking. Structural — not a tunable in practice. |
+| Internal slots | 8 | §3 | `Balance.SLOTS_PER_COMPARTMENT` | |
+| Membrane slots | 8 | §3 | `Balance.SLOTS_PER_COMPARTMENT` | The contested compartment. |
+| External slots | 8 | §3 | `Balance.SLOTS_PER_COMPARTMENT` | |
+| Eviction policy | FIFO | §3 | `SlotRack.insert()` | 8 chosen over 5 so ratios like 4:3:1 are expressible (§3.4). |
+| Proteins per slot | 1 | §3.4 | `SlotRack` | No stacking. Structural — not a tunable in practice. |
+| Build ticks per block | 1 | §3.5 | `Balance.BUILD_TICKS_PER_BLOCK` | **Spec gives no number** — decided at M04. See Open. |
 | Anchor upkeep | ? | §3.4 | pending F05-M04 | Spec says "small metabolite upkeep". |
 | Degron lifetime | ? ticks | §3.4 | pending F05-M04 | |
 
@@ -165,6 +166,12 @@ the rows most likely to move once F01-M05 produces real numbers.
    why the set must not be extended ad hoc.
 5. **Anchor upkeep, degron lifetime, lysis threshold and duration** have no numbers at
    all. Not blocking until F05.
+6. **Build ticks per block = 1**, decided at F01-M04 because §3.5 says only that length
+   determines build time. It has two jobs pulling against each other: long enough that a
+   fused readthrough transcript is visibly slower to express than two short genes (§4's
+   stated cost for omitting a terminator), short enough that a TF-gated emergency efflux
+   gene still arrives in time to matter (§3.2). One tick per block satisfies both at
+   current protein lengths; revisit if F05's emergency circuits feel sluggish.
 
 ## Changelog
 
